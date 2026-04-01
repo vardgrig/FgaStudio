@@ -1,6 +1,6 @@
 # FGA Studio
 
-A web-based management UI for [OpenFGA](https://openfga.dev/) built with .NET 8 and Razor Pages.
+A web-based management UI for [OpenFGA](https://openfga.dev/) built with .NET 10 and Razor Pages.
 
 ## Features
 
@@ -8,7 +8,8 @@ A web-based management UI for [OpenFGA](https://openfga.dev/) built with .NET 8 
 - **Connection management** — add, edit, delete, and switch connections; persisted to `appsettings.json`
 - **Store browser** — list stores, select active store and authorization model
 - **Tuple management** — list, filter, paginate, write, and delete relationship tuples
-- **Dark-themed UI** — Bootstrap 5 dark mode with a clean sidebar layout
+- **Light / dark mode** — toggle in the sidebar, preference saved to `localStorage`
+- **Responsive UI** — mobile-friendly layout with a collapsible sidebar drawer
 
 ---
 
@@ -16,7 +17,7 @@ A web-based management UI for [OpenFGA](https://openfga.dev/) built with .NET 8 
 
 ### Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10)
 - An OpenFGA server (URL mode) or PostgreSQL database (DB mode)
 
 ### Run
@@ -77,7 +78,7 @@ FgaStudio.Web/
 │   └── Tuples/
 │       ├── Index                # List & filter tuples
 │       └── Write                # Write new tuple
-└── wwwroot/css/site.css         # Dark theme styles
+└── wwwroot/css/site.css         # Theme styles (dark + light mode)
 ```
 
 ---
