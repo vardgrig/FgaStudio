@@ -1,6 +1,6 @@
 .validation-summary-valid { display: none; }
 
-/* ─── Variables ─────────────────────────────────────────── */
+/* ─── Variables — dark (default) ────────────────────────── */
 :root {
     --sidebar-width: 230px;
     --sidebar-bg: #0f1117;
@@ -17,7 +17,25 @@
     --success: #22c55e;
     --danger: #ef4444;
     --warning: #f59e0b;
+    --form-bg: #0f1117;
+    --scrollbar-thumb: #2d3748;
+    --scrollbar-thumb-hover: #4a5568;
     --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+}
+
+/* ─── Variables — light ──────────────────────────────────── */
+[data-bs-theme="light"] {
+    --sidebar-bg: #f8fafc;
+    --sidebar-border: #e2e8f0;
+    --sidebar-link-hover: #f1f5f9;
+    --card-bg: #ffffff;
+    --card-border: #e2e8f0;
+    --body-bg: #f1f5f9;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --form-bg: #ffffff;
+    --scrollbar-thumb: #cbd5e1;
+    --scrollbar-thumb-hover: #94a3b8;
 }
 
 /* ─── Base ───────────────────────────────────────────────── */
@@ -93,6 +111,10 @@ body {
     color: #60a5fa;
 }
 
+[data-bs-theme="light"] .sidebar .nav-link.active {
+    color: #1d4ed8;
+}
+
 .status-dot {
     width: 8px;
     height: 8px;
@@ -102,6 +124,27 @@ body {
 
 .status-dot--online { background: var(--success); box-shadow: 0 0 6px var(--success); }
 .status-dot--offline { background: var(--text-secondary); }
+
+/* ─── Theme toggle ───────────────────────────────────────── */
+.theme-toggle {
+    background: none;
+    border: 1px solid var(--sidebar-border);
+    color: var(--text-secondary);
+    border-radius: 6px;
+    padding: 0.3rem 0.55rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: background 0.15s, color 0.15s;
+    width: 100%;
+}
+
+.theme-toggle:hover {
+    background: var(--sidebar-link-hover);
+    color: var(--text-primary);
+}
 
 /* ─── Main content ───────────────────────────────────────── */
 .main-content {
@@ -145,7 +188,7 @@ body {
 }
 
 .connection-card:hover {
-    border-color: #2d3748;
+    border-color: var(--sidebar-border);
 }
 
 .connection-card--active {
@@ -229,10 +272,18 @@ body {
     border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
+[data-bs-theme="light"] .badge--url {
+    color: #1d4ed8;
+}
+
 .badge--db {
     background: rgba(245, 158, 11, 0.15);
     color: #fbbf24;
     border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+[data-bs-theme="light"] .badge--db {
+    color: #b45309;
 }
 
 /* ─── Tuple table ────────────────────────────────────────── */
@@ -253,7 +304,7 @@ body {
 }
 
 .tuple-table tbody tr:hover {
-    background: rgba(255,255,255,0.02);
+    background: rgba(0, 0, 0, 0.03);
 }
 
 .tuple-table tbody tr:last-child td {
@@ -271,6 +322,10 @@ body {
     font-weight: 500;
 }
 
+[data-bs-theme="light"] .relation-badge {
+    color: #7c3aed;
+}
+
 /* ─── Tuple preview ──────────────────────────────────────── */
 .tuple-preview {
     border: 1px solid var(--card-border);
@@ -279,13 +334,13 @@ body {
 
 /* ─── Form overrides ─────────────────────────────────────── */
 .form-control, .form-select {
-    background-color: #0f1117;
+    background-color: var(--form-bg);
     border-color: var(--card-border);
     color: var(--text-primary);
 }
 
 .form-control:focus, .form-select:focus {
-    background-color: #0f1117;
+    background-color: var(--form-bg);
     border-color: var(--accent);
     color: var(--text-primary);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
@@ -314,17 +369,25 @@ body {
 .alert-success {
     background: rgba(34, 197, 94, 0.1);
     border-color: rgba(34, 197, 94, 0.3);
+    color: #16a34a;
+}
+
+[data-bs-theme="dark"] .alert-success {
     color: #86efac;
 }
 
 .alert-danger {
     background: rgba(239, 68, 68, 0.1);
     border-color: rgba(239, 68, 68, 0.3);
+    color: #dc2626;
+}
+
+[data-bs-theme="dark"] .alert-danger {
     color: #fca5a5;
 }
 
 /* ─── Scrollbar ──────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #4a5568; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
