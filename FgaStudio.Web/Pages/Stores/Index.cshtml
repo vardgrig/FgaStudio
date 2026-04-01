@@ -1,0 +1,138 @@
+@page
+@model FgaStudio.Web.Pages.Stores.IndexModel
+@{
+    ViewData["Title"] = "Stores";
+    ViewData["ActivePage"] = "Stores";
+    ViewData["ActiveConnection"] = Model.ActiveConnectionName;
+    ViewData["ActiveStore"] = Model.ActiveStoreId;
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="page-title mb-1">Stores</h1>
+        <p class="text-secondary mb-0">Browse stores and select an active store and authorization model.</p>
+    </div>
+    @if (!string.IsNullOrEmpty(Model.ActiveConnectionName))
+    {
+        <span class="badge bg-body-secondary text-body border">
+            <i class="bi bi-plug me-1"></i>@Model.ActiveConnectionName
+        </span>
+    }
+</div>
+
+@if (Model.ActiveConnection is null)
+{
+    <div class="empty-state card text-center p-5">
+        <i class="bi bi-plug display-4 text-secondary mb-3 d-block"></i>
+        <h5>No active connection</h5>
+        <p class="text-secondary">Set an active connection first to browse stores.</p>
+        <a href="/Connection" class="btn btn-primary">Go to Connections</a>
+    </div>
+}
+else if (Model.Error is not null)
+{
+    <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>@Model.Error</div>
+}
+else
+{
+    <div class="row g-4">
+        <!-- Stores list -->
+        <div class="col-lg-6">
+            <h5 class="mb-3 fw-semibold">Stores</h5>
+            @if (!Model.Stores.Any())
+            {
+                <div class="card p-4 text-center text-secondary">No stores found.</div>
+            }
+            else
+            {
+                <div class="d-flex flex-column gap-2">
+                    @foreach (var store in Model.Stores)
+                    {
+                        <div class="card store-card @(store.IsActive ? "store-card--active" : "")">
+                            <div class="card-body d-flex align-items-center gap-3">
+                                <div class="store-card__icon">
+                                    <i class="bi bi-database@(store.IsActive ? "-fill" : "")"></i>
+                                </div>
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="fw-semibold d-flex align-items-center gap-2">
+                                        @store.Name
+                                        @if (store.IsActive)
+                                        {
+                                            <span class="badge bg-success">Active</span>
+                                        }
+                                    </div>
+                                    <div class="small font-mono text-secondary text-truncate">@store.Id</div>
+                                    @if (store.CreatedAt.HasValue)
+                                    {
+                                        <div class="small text-secondary">@store.CreatedAt.Value.ToString("yyyy-MM-dd HH:mm")</div>
+                                    }
+                                </div>
+                                <form method="post" asp-page-handler="SelectStore">
+                                    <input type="hidden" name="storeId" value="@store.Id" />
+                                    <button type="submit" class="btn btn-sm @(store.IsActive ? "btn-success" : "btn-outline-primary")">
+                                        @(store.IsActive ? "Selected" : "Select")
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Authorization Models -->
+        <div class="col-lg-6">
+            <h5 class="mb-3 fw-semibold">Authorization Models
+                @if (!string.IsNullOrEmpty(Model.ActiveStoreId))
+                {
+                    <span class="text-secondary fw-normal small ms-1">for active store</span>
+                }
+            </h5>
+
+            @if (string.IsNullOrEmpty(Model.ActiveStoreId))
+            {
+                <div class="card p-4 text-center text-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Select a store to view its authorization models.
+                </div>
+            }
+            else if (!Model.AuthorizationModels.Any())
+            {
+                <div class="card p-4 text-center text-secondary">No authorization models found.</div>
+            }
+            else
+            {
+                <div class="d-flex flex-column gap-2">
+                    @foreach (var authModel in Model.AuthorizationModels)
+                    {
+                        <div class="card store-card @(authModel.IsActive ? "store-card--active" : "")">
+                            <div class="card-body d-flex align-items-center gap-3">
+                                <div class="store-card__icon">
+                                    <i class="bi bi-diagram-3@(authModel.IsActive ? "-fill" : "")"></i>
+                                </div>
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="fw-semibold d-flex align-items-center gap-2">
+                                        @if (authModel.IsActive)
+                                        {
+                                            <span class="badge bg-success">Active</span>
+                                        }
+                                    </div>
+                                    <div class="small font-mono text-secondary text-truncate" title="@authModel.Id">@authModel.Id</div>
+                                    @if (authModel.CreatedAt.HasValue)
+                                    {
+                                        <div class="small text-secondary">@authModel.CreatedAt.Value.ToString("yyyy-MM-dd HH:mm")</div>
+                                    }
+                                </div>
+                                <form method="post" asp-page-handler="SelectModel">
+                                    <input type="hidden" name="modelId" value="@authModel.Id" />
+                                    <button type="submit" class="btn btn-sm @(authModel.IsActive ? "btn-success" : "btn-outline-primary")">
+                                        @(authModel.IsActive ? "Selected" : "Select")
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}

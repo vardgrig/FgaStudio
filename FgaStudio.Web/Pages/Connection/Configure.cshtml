@@ -1,0 +1,145 @@
+@page
+@model FgaStudio.Web.Pages.Connection.ConfigureModel
+@{
+    ViewData["Title"] = Model.IsEdit ? "Edit Connection" : "Add Connection";
+    ViewData["ActivePage"] = "Connections";
+    ViewData["ActiveConnection"] = Model.ActiveConnectionName;
+}
+
+<div class="mb-4">
+    <a href="/Connection" class="text-secondary text-decoration-none small">
+        <i class="bi bi-arrow-left me-1"></i>Back to Connections
+    </a>
+    <h1 class="page-title mt-2 mb-1">@(Model.IsEdit ? "Edit Connection" : "Add Connection")</h1>
+    <p class="text-secondary">Connect to an OpenFGA HTTP API or directly to a PostgreSQL database.</p>
+</div>
+
+<div class="row">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-body p-4">
+                <form method="post">
+                    <div asp-validation-summary="All" class="alert alert-danger mb-4"></div>
+
+                    <!-- Name -->
+                    <div class="mb-4">
+                        <label asp-for="Input.Name" class="form-label fw-semibold">Connection Name</label>
+                        <input asp-for="Input.Name" class="form-control" placeholder="e.g. Production, Local Dev" />
+                        <span asp-validation-for="Input.Name" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Type toggle -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Connection Type</label>
+                        <div class="d-flex gap-2">
+                            <input type="radio" class="btn-check" name="Input.Type" id="typeUrl"
+                                   value="Url" @(Model.Input.Type == ConnectionType.Url ? "checked" : "")
+                                   onchange="toggleConnectionType(this.value)" />
+                            <label class="btn btn-outline-primary" for="typeUrl">
+                                <i class="bi bi-globe me-1"></i>URL / HTTP API
+                            </label>
+
+                            <input type="radio" class="btn-check" name="Input.Type" id="typeDb"
+                                   value="Database" @(Model.Input.Type == ConnectionType.Database ? "checked" : "")
+                                   onchange="toggleConnectionType(this.value)" />
+                            <label class="btn btn-outline-primary" for="typeDb">
+                                <i class="bi bi-server me-1"></i>Direct Database
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- URL fields -->
+                    <div id="urlFields" class="connection-fields">
+                        <div class="mb-3">
+                            <label asp-for="Input.ApiUrl" class="form-label fw-semibold">API URL</label>
+                            <input asp-for="Input.ApiUrl" class="form-control font-mono"
+                                   placeholder="http://localhost:8080" />
+                            <div class="form-text">The base URL of your OpenFGA server.</div>
+                            <span asp-validation-for="Input.ApiUrl" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Input.ApiToken" class="form-label fw-semibold">
+                                API Token <span class="text-secondary fw-normal">(optional)</span>
+                            </label>
+                            <input asp-for="Input.ApiToken" type="password" class="form-control font-mono"
+                                   placeholder="Bearer token if auth is enabled" />
+                        </div>
+                    </div>
+
+                    <!-- DB fields -->
+                    <div id="dbFields" class="connection-fields" style="display:none">
+                        <div class="mb-3">
+                            <label asp-for="Input.ConnectionString" class="form-label fw-semibold">Connection String</label>
+                            <input asp-for="Input.ConnectionString" class="form-control font-mono"
+                                   placeholder="Host=localhost;Database=openfga;Username=postgres;Password=..." />
+                            <div class="form-text">PostgreSQL connection string pointing to your OpenFGA database.</div>
+                            <span asp-validation-for="Input.ConnectionString" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- Test connection -->
+                    <div class="mb-4">
+                        <button type="submit" asp-page-handler="Test" class="btn btn-outline-secondary">
+                            <i class="bi bi-broadcast me-1"></i>Test Connection
+                        </button>
+                        @if (Model.TestResult.HasValue)
+                        {
+                            if (Model.TestResult.Value)
+                            {
+                                <span class="ms-2 text-success"><i class="bi bi-check-circle me-1"></i>Connection successful</span>
+                            }
+                            else
+                            {
+                                <span class="ms-2 text-danger"><i class="bi bi-x-circle me-1"></i>Connection failed</span>
+                            }
+                        }
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-floppy me-1"></i>@(Model.IsEdit ? "Save Changes" : "Add Connection")
+                        </button>
+                        <a href="/Connection" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5 mt-4 mt-lg-0">
+        <div class="card bg-body-secondary border-0">
+            <div class="card-body p-4">
+                <h6 class="fw-semibold mb-3"><i class="bi bi-info-circle me-1"></i>Connection Modes</h6>
+                <div class="mb-3">
+                    <div class="fw-semibold small mb-1"><i class="bi bi-globe me-1 text-primary"></i>URL / HTTP API</div>
+                    <p class="small text-secondary mb-0">
+                        Connects to a running OpenFGA server via its REST API using the official SDK.
+                        Supports full read/write operations, store listing, and model management.
+                    </p>
+                </div>
+                <div>
+                    <div class="fw-semibold small mb-1"><i class="bi bi-server me-1 text-warning"></i>Direct Database</div>
+                    <p class="small text-secondary mb-0">
+                        Connects directly to the PostgreSQL database used by OpenFGA.
+                        Useful when you have DB access but no API endpoint available.
+                        Write operations use raw SQL matching the OpenFGA schema.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleConnectionType(value) {
+    document.getElementById('urlFields').style.display = value === 'Url' ? '' : 'none';
+    document.getElementById('dbFields').style.display = value === 'Database' ? '' : 'none';
+}
+// Init on page load
+document.addEventListener('DOMContentLoaded', function () {
+    const checked = document.querySelector('input[name="Input.Type"]:checked');
+    if (checked) toggleConnectionType(checked.value);
+});
+</script>

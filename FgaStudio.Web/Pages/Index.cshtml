@@ -1,0 +1,110 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["ActivePage"] = "Dashboard";
+    ViewData["ActiveConnection"] = Model.ActiveConnectionName;
+    ViewData["ActiveStore"] = Model.ActiveStoreId;
+}
+
+<div class="page-header mb-4">
+    <h1 class="page-title">Dashboard</h1>
+    <p class="text-secondary">Overview of your OpenFGA connections and active store context.</p>
+</div>
+
+@if (Model.ActiveConnection is null)
+{
+    <div class="empty-state card text-center p-5">
+        <i class="bi bi-plug display-4 text-secondary mb-3 d-block"></i>
+        <h5>No active connection</h5>
+        <p class="text-secondary mb-4">Configure a connection to your OpenFGA server or database to get started.</p>
+        <a href="/Connection/Configure" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Add Connection
+        </a>
+    </div>
+}
+else
+{
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="stat-card card h-100">
+                <div class="card-body">
+                    <div class="stat-card__label">Connection</div>
+                    <div class="stat-card__value text-truncate">@Model.ActiveConnection.Name</div>
+                    <div class="mt-2">
+                        <span class="badge @(Model.ActiveConnection.Type == ConnectionType.Url ? "badge--url" : "badge--db")">
+                            <i class="bi @(Model.ActiveConnection.Type == ConnectionType.Url ? "bi-globe" : "bi-server") me-1"></i>
+                            @Model.ActiveConnection.Type
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card card h-100">
+                <div class="card-body">
+                    <div class="stat-card__label">Store ID</div>
+                    @if (!string.IsNullOrEmpty(Model.ActiveConnection.StoreId))
+                    {
+                        <div class="stat-card__value font-mono text-truncate" title="@Model.ActiveConnection.StoreId">
+                            @Model.ActiveConnection.StoreId
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-secondary mt-1">Not selected</div>
+                        <a href="/Stores" class="btn btn-sm btn-outline-primary mt-2">Select Store</a>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card card h-100">
+                <div class="card-body">
+                    <div class="stat-card__label">Authorization Model ID</div>
+                    @if (!string.IsNullOrEmpty(Model.ActiveConnection.AuthorizationModelId))
+                    {
+                        <div class="stat-card__value font-mono text-truncate" title="@Model.ActiveConnection.AuthorizationModelId">
+                            @Model.ActiveConnection.AuthorizationModelId
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-secondary mt-1">Not selected</div>
+                        @if (!string.IsNullOrEmpty(Model.ActiveConnection.StoreId))
+                        {
+                            <a href="/Stores" class="btn btn-sm btn-outline-primary mt-2">Select Model</a>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card quick-action-card">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="quick-action-icon"><i class="bi bi-table"></i></div>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold">Browse Tuples</div>
+                        <div class="small text-secondary">Read, filter, and manage relationship tuples</div>
+                    </div>
+                    <a href="/Tuples" class="btn btn-sm btn-primary">Open</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card quick-action-card">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="quick-action-icon"><i class="bi bi-database"></i></div>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold">Manage Stores</div>
+                        <div class="small text-secondary">Switch stores and authorization models</div>
+                    </div>
+                    <a href="/Stores" class="btn btn-sm btn-primary">Open</a>
+                </div>
+            </div>
+        </div>
+    </div>
+}

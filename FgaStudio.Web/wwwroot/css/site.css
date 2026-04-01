@@ -1,0 +1,330 @@
+.validation-summary-valid { display: none; }
+
+/* ─── Variables ─────────────────────────────────────────── */
+:root {
+    --sidebar-width: 230px;
+    --sidebar-bg: #0f1117;
+    --sidebar-border: #1e2130;
+    --sidebar-link-hover: #1a1f2e;
+    --sidebar-link-active: #1d4ed8;
+    --card-bg: #141720;
+    --card-border: #1e2130;
+    --body-bg: #0b0d14;
+    --text-primary: #e2e8f0;
+    --text-secondary: #64748b;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+}
+
+/* ─── Base ───────────────────────────────────────────────── */
+body {
+    background-color: var(--body-bg);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.font-mono { font-family: var(--font-mono); font-size: 0.85em; }
+.min-w-0 { min-width: 0; }
+
+/* ─── Sidebar ────────────────────────────────────────────── */
+.sidebar {
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--sidebar-border);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.brand-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.brand-name {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+
+.sidebar-section-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    padding: 0 0.5rem;
+    margin-bottom: 0.35rem;
+}
+
+.sidebar .nav-link {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    padding: 0.45rem 0.65rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    transition: background 0.15s, color 0.15s;
+}
+
+.sidebar .nav-link:hover {
+    background: var(--sidebar-link-hover);
+    color: var(--text-primary);
+}
+
+.sidebar .nav-link.active {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.status-dot--online { background: var(--success); box-shadow: 0 0 6px var(--success); }
+.status-dot--offline { background: var(--text-secondary); }
+
+/* ─── Main content ───────────────────────────────────────── */
+.main-content {
+    background: var(--body-bg);
+    min-height: 100vh;
+}
+
+/* ─── Page header ───────────────────────────────────────── */
+.page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: var(--text-primary);
+}
+
+/* ─── Cards ─────────────────────────────────────────────── */
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+}
+
+/* ─── Stat cards ─────────────────────────────────────────── */
+.stat-card .stat-card__label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    margin-bottom: 0.4rem;
+}
+
+.stat-card .stat-card__value {
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+}
+
+/* ─── Connection cards ───────────────────────────────────── */
+.connection-card {
+    transition: border-color 0.15s;
+}
+
+.connection-card:hover {
+    border-color: #2d3748;
+}
+
+.connection-card--active {
+    border-color: rgba(59, 130, 246, 0.4);
+    background: rgba(59, 130, 246, 0.04);
+}
+
+.connection-icon {
+    width: 38px;
+    height: 38px;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+/* ─── Store cards ────────────────────────────────────────── */
+.store-card {
+    transition: border-color 0.15s;
+}
+
+.store-card--active {
+    border-color: rgba(34, 197, 94, 0.35);
+    background: rgba(34, 197, 94, 0.03);
+}
+
+.store-card__icon {
+    width: 36px;
+    height: 36px;
+    background: rgba(100, 116, 139, 0.1);
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+}
+
+.store-card--active .store-card__icon {
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--success);
+}
+
+/* ─── Quick action cards ─────────────────────────────────── */
+.quick-action-card {
+    transition: border-color 0.15s, transform 0.15s;
+}
+
+.quick-action-card:hover {
+    border-color: rgba(59, 130, 246, 0.3);
+    transform: translateY(-1px);
+}
+
+.quick-action-icon {
+    width: 42px;
+    height: 42px;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+/* ─── Empty state ────────────────────────────────────────── */
+.empty-state {
+    border-style: dashed !important;
+}
+
+/* ─── Badges ─────────────────────────────────────────────── */
+.badge--url {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.badge--db {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* ─── Tuple table ────────────────────────────────────────── */
+.tuple-table th {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    font-weight: 600;
+    border-bottom-color: var(--card-border) !important;
+    padding: 0.75rem 1rem;
+}
+
+.tuple-table td {
+    padding: 0.65rem 1rem;
+    border-bottom-color: var(--card-border) !important;
+    vertical-align: middle;
+}
+
+.tuple-table tbody tr:hover {
+    background: rgba(255,255,255,0.02);
+}
+
+.tuple-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.relation-badge {
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    background: rgba(139, 92, 246, 0.12);
+    color: #a78bfa;
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* ─── Tuple preview ──────────────────────────────────────── */
+.tuple-preview {
+    border: 1px solid var(--card-border);
+    font-size: 0.9rem;
+}
+
+/* ─── Form overrides ─────────────────────────────────────── */
+.form-control, .form-select {
+    background-color: #0f1117;
+    border-color: var(--card-border);
+    color: var(--text-primary);
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: #0f1117;
+    border-color: var(--accent);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.form-control::placeholder { color: var(--text-secondary); }
+
+.form-text { color: var(--text-secondary); font-size: 0.8rem; }
+
+/* ─── Buttons ────────────────────────────────────────────── */
+.btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+}
+
+/* ─── Table overrides ────────────────────────────────────── */
+.table { color: var(--text-primary); }
+.table > :not(caption) > * > * { background-color: transparent; }
+
+/* ─── Alert overrides ────────────────────────────────────── */
+.alert-success {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: rgba(34, 197, 94, 0.3);
+    color: #86efac;
+}
+
+.alert-danger {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #4a5568; }

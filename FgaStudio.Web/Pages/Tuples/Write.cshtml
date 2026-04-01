@@ -1,0 +1,131 @@
+@page
+@model FgaStudio.Web.Pages.Tuples.WriteModel
+@{
+    ViewData["Title"] = "Write Tuple";
+    ViewData["ActivePage"] = "Tuples";
+    ViewData["ActiveConnection"] = Model.ActiveConnectionName;
+    ViewData["ActiveStore"] = Model.ActiveStoreId;
+}
+
+<div class="mb-4">
+    <a href="/Tuples" class="text-secondary text-decoration-none small">
+        <i class="bi bi-arrow-left me-1"></i>Back to Tuples
+    </a>
+    <h1 class="page-title mt-2 mb-1">Write Tuple</h1>
+    <p class="text-secondary">Add a new relationship tuple to the active store.</p>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body p-4">
+
+                <!-- Context summary -->
+                <div class="d-flex gap-3 mb-4 p-3 bg-body-secondary rounded">
+                    <div class="small">
+                        <div class="text-secondary">Store</div>
+                        <div class="font-mono fw-semibold text-truncate">@Model.ActiveStoreId</div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.ActiveModelId))
+                    {
+                        <div class="vr"></div>
+                        <div class="small min-w-0">
+                            <div class="text-secondary">Model</div>
+                            <div class="font-mono fw-semibold text-truncate">@Model.ActiveModelId</div>
+                        </div>
+                    }
+                </div>
+
+                <form method="post">
+                    <div asp-validation-summary="All" class="alert alert-danger mb-4"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.User" class="form-label fw-semibold">User</label>
+                        <input asp-for="Input.User" class="form-control font-mono"
+                               placeholder="user:alice" autofocus />
+                        <div class="form-text">e.g. <code>user:alice</code> or <code>group:eng#member</code></div>
+                        <span asp-validation-for="Input.User" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.Relation" class="form-label fw-semibold">Relation</label>
+                        <input asp-for="Input.Relation" class="form-control font-mono"
+                               placeholder="viewer" />
+                        <div class="form-text">e.g. <code>viewer</code>, <code>editor</code>, <code>owner</code></div>
+                        <span asp-validation-for="Input.Relation" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Input.Object" class="form-label fw-semibold">Object</label>
+                        <input asp-for="Input.Object" class="form-control font-mono"
+                               placeholder="document:readme" />
+                        <div class="form-text">e.g. <code>document:readme</code>, <code>folder:root</code></div>
+                        <span asp-validation-for="Input.Object" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Tuple preview -->
+                    <div class="tuple-preview mb-4 p-3 rounded bg-body-secondary">
+                        <div class="small text-secondary mb-1">Preview</div>
+                        <div class="font-mono">
+                            <span id="previewUser" class="text-info">…</span>
+                            <span class="text-secondary mx-2">→</span>
+                            <span id="previewRelation" class="text-warning">…</span>
+                            <span class="text-secondary mx-2">→</span>
+                            <span id="previewObject" class="text-success">…</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-plus-lg me-1"></i>Write Tuple
+                        </button>
+                        <a href="/Tuples" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mt-4 mt-lg-0">
+        <div class="card bg-body-secondary border-0">
+            <div class="card-body p-4">
+                <h6 class="fw-semibold mb-3"><i class="bi bi-info-circle me-1"></i>Tuple Format</h6>
+                <p class="small text-secondary">
+                    A tuple represents a relationship: <em>User</em> has <em>Relation</em> on <em>Object</em>.
+                </p>
+                <div class="table-responsive">
+                    <table class="table table-sm small">
+                        <thead><tr><th>Field</th><th>Examples</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-semibold">User</td>
+                                <td class="font-mono">user:alice<br />group:eng#member</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold">Relation</td>
+                                <td class="font-mono">viewer<br />editor<br />owner</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold">Object</td>
+                                <td class="font-mono">document:readme<br />folder:root</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updatePreview() {
+    document.getElementById('previewUser').textContent =
+        document.getElementById('Input_User').value || '…';
+    document.getElementById('previewRelation').textContent =
+        document.getElementById('Input_Relation').value || '…';
+    document.getElementById('previewObject').textContent =
+        document.getElementById('Input_Object').value || '…';
+}
+document.querySelectorAll('#Input_User, #Input_Relation, #Input_Object')
+    .forEach(el => el.addEventListener('input', updatePreview));
+</script>

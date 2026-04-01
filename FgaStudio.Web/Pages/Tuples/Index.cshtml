@@ -1,0 +1,180 @@
+@page
+@model FgaStudio.Web.Pages.Tuples.IndexModel
+@{
+    ViewData["Title"] = "Tuples";
+    ViewData["ActivePage"] = "Tuples";
+    ViewData["ActiveConnection"] = Model.ActiveConnectionName;
+    ViewData["ActiveStore"] = Model.ActiveStoreId;
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="page-title mb-1">Tuples</h1>
+        <p class="text-secondary mb-0">
+            Read and manage relationship tuples in your OpenFGA store.
+        </p>
+    </div>
+    @if (Model.IsReady)
+    {
+        <a href="/Tuples/Write" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Write Tuple
+        </a>
+    }
+</div>
+
+@if (!Model.IsReady)
+{
+    <div class="empty-state card text-center p-5">
+        @if (Model.ActiveConnection is null)
+        {
+            <i class="bi bi-plug display-4 text-secondary mb-3 d-block"></i>
+            <h5>No active connection</h5>
+            <p class="text-secondary">Set an active connection to browse tuples.</p>
+            <a href="/Connection" class="btn btn-primary">Go to Connections</a>
+        }
+        else if (string.IsNullOrEmpty(Model.ActiveStoreId))
+        {
+            <i class="bi bi-database display-4 text-secondary mb-3 d-block"></i>
+            <h5>No store selected</h5>
+            <p class="text-secondary">Select a store and authorization model before browsing tuples.</p>
+            <a href="/Stores" class="btn btn-primary">Go to Stores</a>
+        }
+    </div>
+}
+else
+{
+    <!-- Filter bar -->
+    <div class="card mb-4">
+        <div class="card-body p-3">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold mb-1">User</label>
+                    <input name="User" value="@Model.Filter.User" class="form-control form-control-sm font-mono"
+                           placeholder="user:alice" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold mb-1">Relation</label>
+                    <input name="Relation" value="@Model.Filter.Relation" class="form-control form-control-sm font-mono"
+                           placeholder="viewer" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold mb-1">Object</label>
+                    <input name="Object" value="@Model.Filter.Object" class="form-control form-control-sm font-mono"
+                           placeholder="document:readme" />
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-sm btn-primary flex-grow-1">
+                        <i class="bi bi-funnel me-1"></i>Filter
+                    </button>
+                    <a href="/Tuples" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                </div>
+                <input type="hidden" name="Page" value="1" />
+                <input type="hidden" name="PageSize" value="@Model.Filter.PageSize" />
+            </form>
+        </div>
+    </div>
+
+    @if (Model.Error is not null)
+    {
+        <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>@Model.Error</div>
+    }
+    else if (!Model.Tuples.Any())
+    {
+        <div class="card text-center p-5 text-secondary">
+            <i class="bi bi-inbox display-4 mb-3 d-block"></i>
+            <h6>No tuples found</h6>
+            <p class="small mb-0">Try adjusting the filter or write a new tuple.</p>
+        </div>
+    }
+    else
+    {
+        <!-- Store/model context bar -->
+        <div class="d-flex gap-3 mb-3 align-items-center">
+            <span class="small text-secondary">
+                <i class="bi bi-database me-1"></i>
+                <span class="font-mono">@Model.ActiveStoreId</span>
+            </span>
+            @if (!string.IsNullOrEmpty(Model.ActiveModelId))
+            {
+                <span class="small text-secondary">
+                    <i class="bi bi-diagram-3 me-1"></i>
+                    <span class="font-mono">@Model.ActiveModelId</span>
+                </span>
+            }
+            <span class="ms-auto small text-secondary">
+                Showing @Model.Tuples.Count result(s)
+            </span>
+        </div>
+
+        <!-- Tuple table -->
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover tuple-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Relation</th>
+                            <th>Object</th>
+                            <th>Timestamp</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var tuple in Model.Tuples)
+                        {
+                            <tr>
+                                <td class="font-mono">@tuple.User</td>
+                                <td>
+                                    <span class="relation-badge">@tuple.Relation</span>
+                                </td>
+                                <td class="font-mono">@tuple.Object</td>
+                                <td class="text-secondary small">
+                                    @(tuple.Timestamp?.ToString("yyyy-MM-dd HH:mm:ss") ?? "—")
+                                </td>
+                                <td class="text-end">
+                                    <form method="post" asp-page-handler="Delete"
+                                          onsubmit="return confirm('Delete tuple (@tuple.User → @tuple.Relation → @tuple.Object)?')">
+                                        <input type="hidden" name="user" value="@tuple.User" />
+                                        <input type="hidden" name="relation" value="@tuple.Relation" />
+                                        <input type="hidden" name="object" value="@tuple.Object" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        @if (Model.Filter.Page > 1 || Model.HasNextPage)
+        {
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                    @if (Model.Filter.Page > 1)
+                    {
+                        <a href="?User=@Model.Filter.User&Relation=@Model.Filter.Relation&Object=@Model.Filter.Object&Page=@(Model.Filter.Page - 1)&PageSize=@Model.Filter.PageSize"
+                           class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-chevron-left me-1"></i>Previous
+                        </a>
+                    }
+                </div>
+                <span class="small text-secondary">Page @Model.Filter.Page</span>
+                <div>
+                    @if (Model.HasNextPage)
+                    {
+                        <a href="?User=@Model.Filter.User&Relation=@Model.Filter.Relation&Object=@Model.Filter.Object&Page=@(Model.Filter.Page + 1)&PageSize=@Model.Filter.PageSize"
+                           class="btn btn-sm btn-outline-secondary">
+                            Next<i class="bi bi-chevron-right ms-1"></i>
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+    }
+}

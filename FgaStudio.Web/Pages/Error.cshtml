@@ -1,0 +1,16 @@
+@page
+@model FgaStudio.Web.Pages.ErrorModel
+@{
+    ViewData["Title"] = "Error";
+}
+
+<div class="text-center py-5">
+    <i class="bi bi-exclamation-triangle display-3 text-danger mb-4 d-block"></i>
+    <h2>Something went wrong</h2>
+    <p class="text-secondary">An unexpected error occurred.</p>
+    @if (Model.RequestId is not null)
+    {
+        <p class="small text-secondary font-mono">Request ID: @Model.RequestId</p>
+    }
+    <a href="/" class="btn btn-primary mt-2">Back to Dashboard</a>
+</div>
