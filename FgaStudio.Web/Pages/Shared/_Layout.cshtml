@@ -16,11 +16,27 @@
 </head>
 <body>
 
+<!-- Mobile top bar -->
+<header class="mobile-topbar d-flex d-lg-none align-items-center gap-3 px-3">
+    <button class="btn btn-link p-0 text-body" type="button"
+            data-bs-toggle="offcanvas" data-bs-target="#sidebar-offcanvas" aria-label="Open menu">
+        <i class="bi bi-list fs-4"></i>
+    </button>
+    <span class="brand-name">FGA Studio</span>
+</header>
+
 <div class="d-flex" style="min-height:100vh">
 
-    <!-- Sidebar -->
-    <nav class="sidebar d-flex flex-column flex-shrink-0 p-3">
-        <a href="/" class="sidebar-brand d-flex align-items-center gap-2 mb-4 text-decoration-none">
+    <!-- Sidebar — offcanvas on mobile, sticky panel on desktop -->
+    <nav class="sidebar offcanvas-lg offcanvas-start d-flex flex-column flex-shrink-0 p-3"
+         id="sidebar-offcanvas" tabindex="-1">
+
+        <div class="offcanvas-header d-lg-none px-0 pb-3">
+            <span class="brand-name">FGA Studio</span>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sidebar-offcanvas"></button>
+        </div>
+
+        <a href="/" class="sidebar-brand d-none d-lg-flex align-items-center gap-2 mb-4 text-decoration-none">
             <span class="brand-icon"><i class="bi bi-diagram-3-fill"></i></span>
             <span class="brand-name">FGA Studio</span>
         </a>
@@ -85,7 +101,7 @@
 
     <!-- Main content -->
     <div class="main-content flex-grow-1 d-flex flex-column">
-        <main class="flex-grow-1 p-4">
+        <main class="flex-grow-1 p-3 p-md-4">
             @if (TempData["Success"] is string success)
             {
                 <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">

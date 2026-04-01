@@ -7,7 +7,7 @@
     ViewData["ActiveStore"] = Model.ActiveStoreId;
 }
 
-<div class="d-flex align-items-center justify-content-between mb-4">
+<div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-4">
     <div>
         <h1 class="page-title mb-1">Connections</h1>
         <p class="text-secondary mb-0">Manage your OpenFGA server and database connections.</p>
@@ -36,7 +36,7 @@ else
             var isActive = conn.Name == Model.ActiveConnectionName;
             <div class="col-12">
                 <div class="card connection-card @(isActive ? "connection-card--active" : "")">
-                    <div class="card-body d-flex align-items-start gap-3">
+                    <div class="card-body d-flex align-items-start gap-3 flex-wrap">
                         <div class="connection-icon">
                             <i class="bi @(conn.Type == ConnectionType.Url ? "bi-globe2" : "bi-server")"></i>
                         </div>

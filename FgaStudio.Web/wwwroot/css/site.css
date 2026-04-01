@@ -48,6 +48,16 @@ body {
 .font-mono { font-family: var(--font-mono); font-size: 0.85em; }
 .min-w-0 { min-width: 0; }
 
+/* ─── Mobile top bar ─────────────────────────────────────── */
+.mobile-topbar {
+    height: 52px;
+    background: var(--sidebar-bg);
+    border-bottom: 1px solid var(--sidebar-border);
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+}
+
 /* ─── Sidebar ────────────────────────────────────────────── */
 .sidebar {
     width: var(--sidebar-width);
@@ -58,6 +68,18 @@ body {
     top: 0;
     height: 100vh;
     overflow-y: auto;
+}
+
+/* On mobile the offcanvas takes over positioning */
+@media (max-width: 991.98px) {
+    .sidebar {
+        position: fixed;
+        height: 100%;
+        width: var(--sidebar-width) !important;
+    }
+    body {
+        padding-top: 52px; /* offset for mobile topbar */
+    }
 }
 
 .brand-icon {
