@@ -9,6 +9,7 @@ namespace FgaStudio.Web.Pages.Tuples;
 public class WriteModel : PageModel
 {
     private readonly ConnectionManager _connectionManager;
+    private readonly TupleCacheService _tupleCache;
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -17,9 +18,10 @@ public class WriteModel : PageModel
     public string? ActiveStoreId { get; private set; }
     public string? ActiveModelId { get; private set; }
 
-    public WriteModel(ConnectionManager connectionManager)
+    public WriteModel(ConnectionManager connectionManager, TupleCacheService tupleCache)
     {
         _connectionManager = connectionManager;
+        _tupleCache = tupleCache;
     }
 
     public IActionResult OnGet()
@@ -64,6 +66,9 @@ public class WriteModel : PageModel
                     Relation = Input.Relation,
                     Object = Input.Object
                 });
+
+            if (active.Type == ConnectionType.Url)
+                await _tupleCache.InvalidateAsync(active.Name, active.StoreId);
 
             TempData["Success"] = $"Tuple written: {Input.User} → {Input.Relation} → {Input.Object}";
             return RedirectToPage("/Tuples/Index");

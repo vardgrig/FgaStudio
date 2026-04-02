@@ -25,32 +25,52 @@ public class FgaHttpService : IFgaService
             AuthorizationModelId = modelId,
         };
 
-        if (!string.IsNullOrWhiteSpace(_config.ApiToken))
+        switch (_config.AuthMethod)
         {
-            clientConfig.Credentials = new Credentials
-            {
-                Method = CredentialsMethod.ApiToken,
-                Config = new CredentialsConfig
+            case Models.AuthMethod.ApiToken when !string.IsNullOrWhiteSpace(_config.ApiToken):
+                clientConfig.Credentials = new Credentials
                 {
-                    ApiToken = _config.ApiToken
-                }
-            };
+                    Method = CredentialsMethod.ApiToken,
+                    Config = new CredentialsConfig { ApiToken = _config.ApiToken }
+                };
+                break;
+
+            case Models.AuthMethod.ClientCredentials:
+                clientConfig.Credentials = new Credentials
+                {
+                    Method = CredentialsMethod.ClientCredentials,
+                    Config = new CredentialsConfig
+                    {
+                        ClientId = _config.ClientId,
+                        ClientSecret = _config.ClientSecret,
+                        ApiAudience = _config.ApiAudience,
+                        ApiTokenIssuer = _config.ApiTokenIssuer
+                    }
+                };
+                break;
         }
 
         return new OpenFgaClient(clientConfig);
     }
 
-    public async Task<bool> TestConnectionAsync()
+    // COUNT is not supported via the HTTP API — use TupleCacheService for HTTP connections.
+    public Task<int> CountTuplesAsync(string storeId, TupleFilter filter) => Task.FromResult(-1);
+
+    public async Task<(bool Success, string? Error)> TestConnectionAsync()
     {
         try
         {
             var client = BuildClient();
             await client.ListStores(null, null);
-            return true;
+            return (true, null);
         }
-        catch
+        catch (Exception ex)
         {
-            return false;
+            var root = ex.GetBaseException();
+            var msg = root.Message == ex.Message
+                ? $"{ex.GetType().Name}: {ex.Message}"
+                : $"{ex.GetType().Name}: {ex.Message} → {root.GetType().Name}: {root.Message}";
+            return (false, msg);
         }
     }
 

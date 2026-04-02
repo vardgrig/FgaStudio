@@ -57,12 +57,63 @@
                             <div class="form-text">The base URL of your OpenFGA server.</div>
                             <span asp-validation-for="Input.ApiUrl" class="text-danger small"></span>
                         </div>
+
+                        <!-- Auth method -->
                         <div class="mb-3">
-                            <label asp-for="Input.ApiToken" class="form-label fw-semibold">
-                                API Token <span class="text-secondary fw-normal">(optional)</span>
-                            </label>
-                            <input asp-for="Input.ApiToken" type="password" class="form-control font-mono"
-                                   placeholder="Bearer token if auth is enabled" />
+                            <label class="form-label fw-semibold">Authentication</label>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <input type="radio" class="btn-check" name="Input.AuthMethod" id="authNone"
+                                       value="None" @(Model.Input.AuthMethod == AuthMethod.None ? "checked" : "")
+                                       onchange="toggleAuthMethod(this.value)" />
+                                <label class="btn btn-outline-secondary btn-sm" for="authNone">None</label>
+
+                                <input type="radio" class="btn-check" name="Input.AuthMethod" id="authApiToken"
+                                       value="ApiToken" @(Model.Input.AuthMethod == AuthMethod.ApiToken ? "checked" : "")
+                                       onchange="toggleAuthMethod(this.value)" />
+                                <label class="btn btn-outline-secondary btn-sm" for="authApiToken">API Token</label>
+
+                                <input type="radio" class="btn-check" name="Input.AuthMethod" id="authClientCreds"
+                                       value="ClientCredentials" @(Model.Input.AuthMethod == AuthMethod.ClientCredentials ? "checked" : "")
+                                       onchange="toggleAuthMethod(this.value)" />
+                                <label class="btn btn-outline-secondary btn-sm" for="authClientCreds">
+                                    Client Credentials (OAuth2)
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- ApiToken fields -->
+                        <div id="authApiTokenFields" class="auth-fields" style="display:none">
+                            <div class="mb-3">
+                                <label asp-for="Input.ApiToken" class="form-label fw-semibold">API Token</label>
+                                <input asp-for="Input.ApiToken" type="password" class="form-control font-mono"
+                                       placeholder="Bearer token" />
+                            </div>
+                        </div>
+
+                        <!-- Client Credentials fields -->
+                        <div id="authClientCredsFields" class="auth-fields" style="display:none">
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label asp-for="Input.ClientId" class="form-label fw-semibold">Client ID</label>
+                                    <input asp-for="Input.ClientId" class="form-control font-mono" placeholder="Client ID" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="Input.ClientSecret" class="form-label fw-semibold">Client Secret</label>
+                                    <input asp-for="Input.ClientSecret" type="password" class="form-control font-mono" placeholder="Client Secret" />
+                                </div>
+                            </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label asp-for="Input.ApiAudience" class="form-label fw-semibold">API Audience</label>
+                                    <input asp-for="Input.ApiAudience" class="form-control font-mono"
+                                           placeholder="e.g. https://api.us1.fga.dev/" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="Input.ApiTokenIssuer" class="form-label fw-semibold">Token Issuer</label>
+                                    <input asp-for="Input.ApiTokenIssuer" class="form-control font-mono"
+                                           placeholder="e.g. auth.fga.dev" />
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -91,6 +142,10 @@
                             else
                             {
                                 <span class="ms-2 text-danger"><i class="bi bi-x-circle me-1"></i>Connection failed</span>
+                                @if (!string.IsNullOrEmpty(Model.TestError))
+                                {
+                                    <div class="mt-2 p-2 rounded bg-danger-subtle text-danger small font-mono">@Model.TestError</div>
+                                }
                             }
                         }
                     </div>
@@ -117,6 +172,7 @@
                     <p class="small text-secondary mb-0">
                         Connects to a running OpenFGA server via its REST API using the official SDK.
                         Supports full read/write operations, store listing, and model management.
+                        Use <strong>Client Credentials</strong> for public/hosted instances (e.g. Okta FGA).
                     </p>
                 </div>
                 <div>
@@ -137,9 +193,17 @@ function toggleConnectionType(value) {
     document.getElementById('urlFields').style.display = value === 'Url' ? '' : 'none';
     document.getElementById('dbFields').style.display = value === 'Database' ? '' : 'none';
 }
-// Init on page load
+
+function toggleAuthMethod(value) {
+    document.getElementById('authApiTokenFields').style.display = value === 'ApiToken' ? '' : 'none';
+    document.getElementById('authClientCredsFields').style.display = value === 'ClientCredentials' ? '' : 'none';
+}
+
 document.addEventListener('DOMContentLoaded', function () {
-    const checked = document.querySelector('input[name="Input.Type"]:checked');
-    if (checked) toggleConnectionType(checked.value);
+    const checkedType = document.querySelector('input[name="Input.Type"]:checked');
+    if (checkedType) toggleConnectionType(checkedType.value);
+
+    const checkedAuth = document.querySelector('input[name="Input.AuthMethod"]:checked');
+    if (checkedAuth) toggleAuthMethod(checkedAuth.value);
 });
 </script>

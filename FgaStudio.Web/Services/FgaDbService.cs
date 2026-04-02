@@ -24,17 +24,37 @@ public class FgaDbService : IFgaService
         return conn;
     }
 
-    public async Task<bool> TestConnectionAsync()
+    public async Task<int> CountTuplesAsync(string storeId, TupleFilter filter)
+    {
+        await using var conn = new NpgsqlConnection(_config.ConnectionString);
+        await conn.OpenAsync();
+
+        var conditions = new List<string> { "store = @storeId", "deleted_at IS NULL" };
+        if (!string.IsNullOrWhiteSpace(filter.User))     conditions.Add("_user = @user");
+        if (!string.IsNullOrWhiteSpace(filter.Relation)) conditions.Add("relation = @relation");
+        if (!string.IsNullOrWhiteSpace(filter.Object))   conditions.Add("object = @object");
+
+        var sql = $"SELECT COUNT(*) FROM tuple WHERE {string.Join(" AND ", conditions)}";
+        await using var cmd = new NpgsqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("storeId", storeId);
+        if (!string.IsNullOrWhiteSpace(filter.User))     cmd.Parameters.AddWithValue("user", filter.User);
+        if (!string.IsNullOrWhiteSpace(filter.Relation)) cmd.Parameters.AddWithValue("relation", filter.Relation);
+        if (!string.IsNullOrWhiteSpace(filter.Object))   cmd.Parameters.AddWithValue("object", filter.Object);
+
+        return Convert.ToInt32(await cmd.ExecuteScalarAsync());
+    }
+
+    public async Task<(bool Success, string? Error)> TestConnectionAsync()
     {
         try
         {
             await using var conn = new NpgsqlConnection(_config.ConnectionString);
             await conn.OpenAsync();
-            return true;
+            return (true, null);
         }
-        catch
+        catch (Exception ex)
         {
-            return false;
+            return (false, ex.Message);
         }
     }
 
@@ -109,14 +129,21 @@ public class FgaDbService : IFgaService
         if (!string.IsNullOrWhiteSpace(filter.Relation)) conditions.Add("relation = @relation");
         if (!string.IsNullOrWhiteSpace(filter.Object)) conditions.Add("object = @object");
 
-        // Cursor-based pagination using ulid/inserted_at
         int offset = (filter.Page - 1) * filter.PageSize;
+        bool desc = filter.SortDir?.ToLowerInvariant() != "asc";
+        string orderBy = filter.SortBy?.ToLowerInvariant() switch
+        {
+            "user"      => $"_user {(desc ? "DESC" : "ASC")}",
+            "relation"  => $"relation {(desc ? "DESC" : "ASC")}",
+            "object"    => $"object {(desc ? "DESC" : "ASC")}",
+            _           => $"inserted_at {(desc ? "DESC" : "ASC")}",  // default: timestamp
+        };
 
         var sql = $"""
             SELECT _user, relation, object, inserted_at
             FROM tuple
             WHERE {string.Join(" AND ", conditions)}
-            ORDER BY inserted_at DESC
+            ORDER BY {orderBy}
             LIMIT @pageSize OFFSET @offset
             """;
 

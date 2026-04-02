@@ -15,6 +15,7 @@ public class ConfigureModel : PageModel
 
     public bool IsEdit { get; private set; }
     public bool? TestResult { get; private set; }
+    public string? TestError { get; private set; }
     public string? ActiveConnectionName => _connectionManager.GetActive()?.Name;
 
     public ConfigureModel(ConnectionManager connectionManager)
@@ -35,7 +36,12 @@ public class ConfigureModel : PageModel
                     Name = existing.Name,
                     Type = existing.Type,
                     ApiUrl = existing.ApiUrl,
+                    AuthMethod = existing.AuthMethod,
                     ApiToken = existing.ApiToken,
+                    ClientId = existing.ClientId,
+                    ClientSecret = existing.ClientSecret,
+                    ApiAudience = existing.ApiAudience,
+                    ApiTokenIssuer = existing.ApiTokenIssuer,
                     ConnectionString = existing.ConnectionString
                 };
             }
@@ -61,7 +67,17 @@ public class ConfigureModel : PageModel
 
         var config = BuildConfig();
         var service = _connectionManager.BuildService(config);
-        TestResult = service is not null && await service.TestConnectionAsync();
+        if (service is null)
+        {
+            TestResult = false;
+            TestError = "Could not build service for this connection type.";
+        }
+        else
+        {
+            var (success, error) = await service.TestConnectionAsync();
+            TestResult = success;
+            TestError = error;
+        }
         IsEdit = _connectionManager.GetByName(Input.Name) is not null;
         return Page();
     }
@@ -71,7 +87,12 @@ public class ConfigureModel : PageModel
         Name = Input.Name,
         Type = Input.Type,
         ApiUrl = Input.ApiUrl,
+        AuthMethod = Input.AuthMethod,
         ApiToken = Input.ApiToken,
+        ClientId = Input.ClientId,
+        ClientSecret = Input.ClientSecret,
+        ApiAudience = Input.ApiAudience,
+        ApiTokenIssuer = Input.ApiTokenIssuer,
         ConnectionString = Input.ConnectionString,
         // Preserve existing store context if editing
         StoreId = _connectionManager.GetByName(Input.Name)?.StoreId,
@@ -93,7 +114,12 @@ public class ConfigureModel : PageModel
         public string Name { get; set; } = string.Empty;
         public ConnectionType Type { get; set; } = ConnectionType.Url;
         public string? ApiUrl { get; set; }
+        public AuthMethod AuthMethod { get; set; } = AuthMethod.None;
         public string? ApiToken { get; set; }
+        public string? ClientId { get; set; }
+        public string? ClientSecret { get; set; }
+        public string? ApiAudience { get; set; }
+        public string? ApiTokenIssuer { get; set; }
         public string? ConnectionString { get; set; }
     }
 }

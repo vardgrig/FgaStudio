@@ -2,6 +2,8 @@ namespace FgaStudio.Web.Models;
 
 public enum ConnectionType { Url, Database }
 
+public enum AuthMethod { None, ApiToken, ClientCredentials }
+
 public class ConnectionConfig
 {
     public string Name { get; set; } = string.Empty;
@@ -9,7 +11,16 @@ public class ConnectionConfig
 
     // URL mode
     public string? ApiUrl { get; set; }
+    public AuthMethod AuthMethod { get; set; } = AuthMethod.None;
+
+    // ApiToken auth
     public string? ApiToken { get; set; }
+
+    // OAuth2 Client Credentials auth
+    public string? ClientId { get; set; }
+    public string? ClientSecret { get; set; }
+    public string? ApiAudience { get; set; }
+    public string? ApiTokenIssuer { get; set; }
 
     // DB mode
     public string? ConnectionString { get; set; }
@@ -56,4 +67,8 @@ public class TupleFilter
     public string? Object { get; set; }
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 25;
+    // Used by the DB service for server-side ORDER BY.
+    // Ignored by the HTTP service (OpenFGA API has no sort support).
+    public string? SortBy { get; set; }
+    public string? SortDir { get; set; }
 }

@@ -10,17 +10,30 @@
 <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-4">
     <div>
         <h1 class="page-title mb-1">Tuples</h1>
-        <p class="text-secondary mb-0">
-            Read and manage relationship tuples in your OpenFGA store.
-        </p>
+        <p class="text-secondary mb-0">Read and manage relationship tuples in your OpenFGA store.</p>
     </div>
-    @if (Model.IsReady)
+    @if (Model.IsReady && !Model.CacheIsEmpty)
     {
         <a href="/Tuples/Write" class="btn btn-primary">
-            <i class="bi bi-plus-lg me-1"></i> Write Tuple
+            <i class="bi bi-plus-lg me-1"></i>Write Tuple
         </a>
     }
 </div>
+
+@if (TempData["Success"] is string successMsg)
+{
+    <div class="alert alert-success alert-dismissible mb-4">
+        <i class="bi bi-check-circle me-2"></i>@successMsg
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] is string errorMsg)
+{
+    <div class="alert alert-danger alert-dismissible mb-4">
+        <i class="bi bi-exclamation-triangle me-2"></i>@errorMsg
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
 
 @if (!Model.IsReady)
 {
@@ -39,6 +52,21 @@
             <p class="text-secondary">Select a store and authorization model before browsing tuples.</p>
             <a href="/Stores" class="btn btn-primary">Go to Stores</a>
         }
+    </div>
+}
+else if (Model.CacheIsEmpty)
+{
+    <div class="card text-center p-5">
+        <i class="bi bi-cloud-download display-4 text-secondary mb-3 d-block"></i>
+        <h5>Tuples not loaded yet</h5>
+        <p class="text-secondary mb-4">
+            Load all tuples from OpenFGA into the local cache to enable sorting, filtering, and pagination.
+        </p>
+        <form method="post" class="d-inline">
+            <button asp-page-handler="RefreshCache" class="btn btn-primary">
+                <i class="bi bi-cloud-download me-1"></i>Load Tuples
+            </button>
+        </form>
     </div>
 }
 else
@@ -72,6 +100,8 @@ else
                 </div>
                 <input type="hidden" name="Page" value="1" />
                 <input type="hidden" name="PageSize" value="@Model.Filter.PageSize" />
+                <input type="hidden" name="SortBy" value="@Model.SortBy" />
+                <input type="hidden" name="SortDir" value="@Model.SortDir" />
             </form>
         </div>
     </div>
@@ -80,18 +110,10 @@ else
     {
         <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>@Model.Error</div>
     }
-    else if (!Model.Tuples.Any())
-    {
-        <div class="card text-center p-5 text-secondary">
-            <i class="bi bi-inbox display-4 mb-3 d-block"></i>
-            <h6>No tuples found</h6>
-            <p class="small mb-0">Try adjusting the filter or write a new tuple.</p>
-        </div>
-    }
     else
     {
-        <!-- Store/model context bar -->
-        <div class="d-flex gap-3 mb-3 align-items-center">
+        <!-- Context bar: store info + cache status -->
+        <div class="d-flex gap-3 mb-3 align-items-center flex-wrap">
             <span class="small text-secondary">
                 <i class="bi bi-database me-1"></i>
                 <span class="font-mono">@Model.ActiveStoreId</span>
@@ -103,75 +125,154 @@ else
                     <span class="font-mono">@Model.ActiveModelId</span>
                 </span>
             }
-            <span class="ms-auto small text-secondary">
-                Showing @Model.Tuples.Count result(s)
-            </span>
-        </div>
 
-        <!-- Tuple table -->
-        <div class="card">
-            <div class="table-responsive">
-                <table class="table table-hover tuple-table mb-0">
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Relation</th>
-                            <th>Object</th>
-                            <th>Timestamp</th>
-                            <th class="text-end">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var tuple in Model.Tuples)
-                        {
-                            <tr>
-                                <td class="font-mono">@tuple.User</td>
-                                <td>
-                                    <span class="relation-badge">@tuple.Relation</span>
-                                </td>
-                                <td class="font-mono">@tuple.Object</td>
-                                <td class="text-secondary small">
-                                    @(tuple.Timestamp?.ToString("yyyy-MM-dd HH:mm:ss") ?? "—")
-                                </td>
-                                <td class="text-end">
-                                    <form method="post" asp-page-handler="Delete"
-                                          onsubmit="return confirm('Delete tuple (@tuple.User → @tuple.Relation → @tuple.Object)?')">
-                                        <input type="hidden" name="user" value="@tuple.User" />
-                                        <input type="hidden" name="relation" value="@tuple.Relation" />
-                                        <input type="hidden" name="object" value="@tuple.Object" />
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Pagination -->
-        @if (Model.Filter.Page > 1 || Model.HasNextPage)
-        {
-            <div class="d-flex justify-content-between align-items-center mt-3">
-                <div>
-                    @if (Model.Filter.Page > 1)
+            @if (Model.IsUrlConnection && Model.CachedAt.HasValue)
+            {
+                <span class="small text-secondary ms-auto">
+                    <i class="bi bi-clock me-1"></i>Cached @Model.CachedAt.Value.ToString("yyyy-MM-dd HH:mm") UTC
+                </span>
+                <form method="post" class="d-inline">
+                    <button asp-page-handler="RefreshCache" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                    </button>
+                </form>
+            }
+            else
+            {
+                <span class="ms-auto small text-secondary">
+                    @if (Model.TotalCount == 0)
                     {
-                        <a href="?User=@Model.Filter.User&Relation=@Model.Filter.Relation&Object=@Model.Filter.Object&Page=@(Model.Filter.Page - 1)&PageSize=@Model.Filter.PageSize"
+                        <span>No results</span>
+                    }
+                    else
+                    {
+                        <span>Showing <strong>@Model.StartItem–@Model.EndItem</strong> of <strong>@Model.TotalCount</strong></span>
+                    }
+                </span>
+            }
+        </div>
+
+        @if (!Model.Tuples.Any())
+        {
+            <div class="card text-center p-5 text-secondary">
+                <i class="bi bi-inbox display-4 mb-3 d-block"></i>
+                <h6>No tuples found</h6>
+                <p class="small mb-0">Try adjusting the filter or write a new tuple.</p>
+            </div>
+        }
+        else
+        {
+            <!-- Tuple table -->
+            <div class="card">
+                <div class="table-responsive">
+                    <table class="table table-hover tuple-table mb-0">
+                        <thead>
+                            @{
+                                string q = $"User={Model.Filter.User}&Relation={Model.Filter.Relation}&Object={Model.Filter.Object}&Page=1&PageSize={Model.Filter.PageSize}";
+                                string SortLink(string col) => $"?{q}&SortBy={col}&SortDir={Model.NextSortDir(col)}";
+                                string SortIcon(string col) => Model.SortBy == col.ToLowerInvariant()
+                                    ? (Model.SortDir == "asc" ? "bi-sort-up" : "bi-sort-down")
+                                    : "bi-arrow-down-up text-secondary opacity-50";
+                            }
+                            <tr>
+                                <th><a href="@SortLink("user")" class="text-decoration-none text-body d-flex align-items-center gap-1">User <i class="bi @SortIcon("user") small"></i></a></th>
+                                <th><a href="@SortLink("relation")" class="text-decoration-none text-body d-flex align-items-center gap-1">Relation <i class="bi @SortIcon("relation") small"></i></a></th>
+                                <th><a href="@SortLink("object")" class="text-decoration-none text-body d-flex align-items-center gap-1">Object <i class="bi @SortIcon("object") small"></i></a></th>
+                                <th><a href="@SortLink("timestamp")" class="text-decoration-none text-body d-flex align-items-center gap-1">Timestamp <i class="bi @SortIcon("timestamp") small"></i></a></th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var tuple in Model.Tuples)
+                            {
+                                <tr>
+                                    <td class="font-mono">@tuple.User</td>
+                                    <td><span class="relation-badge">@tuple.Relation</span></td>
+                                    <td class="font-mono">@tuple.Object</td>
+                                    <td class="text-secondary small">
+                                        @(tuple.Timestamp?.ToString("yyyy-MM-dd HH:mm:ss") ?? "—")
+                                    </td>
+                                    <td class="text-end">
+                                        <form method="post" asp-page-handler="Delete"
+                                              onsubmit="return confirm('Delete tuple (@tuple.User → @tuple.Relation → @tuple.Object)?')">
+                                            <input type="hidden" name="user"     value="@tuple.User" />
+                                            <input type="hidden" name="relation" value="@tuple.Relation" />
+                                            <input type="hidden" name="object"   value="@tuple.Object" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                <!-- Previous -->
+                <div>
+                    @if (Model.HasPrevPage)
+                    {
+                        <a href="?User=@Model.Filter.User&Relation=@Model.Filter.Relation&Object=@Model.Filter.Object&SortBy=@Model.SortBy&SortDir=@Model.SortDir&PageSize=@Model.Filter.PageSize&Page=@(Model.Filter.Page - 1)"
                            class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-chevron-left me-1"></i>Previous
                         </a>
                     }
+                    else
+                    {
+                        <button class="btn btn-sm btn-outline-secondary" disabled>
+                            <i class="bi bi-chevron-left me-1"></i>Previous
+                        </button>
+                    }
                 </div>
-                <span class="small text-secondary">Page @Model.Filter.Page</span>
+
+                <!-- Centre: page info + count + page size picker -->
+                <div class="d-flex align-items-center gap-3 small text-secondary">
+                    <span>
+                        Page <strong>@Model.Filter.Page</strong> of <strong>@Model.TotalPages</strong>
+                        &middot; items <strong>@Model.StartItem–@Model.EndItem</strong> of <strong>@Model.TotalCount</strong>
+                    </span>
+                    <form method="get" class="d-flex align-items-center gap-1">
+                        <input type="hidden" name="User"     value="@Model.Filter.User" />
+                        <input type="hidden" name="Relation" value="@Model.Filter.Relation" />
+                        <input type="hidden" name="Object"   value="@Model.Filter.Object" />
+                        <input type="hidden" name="SortBy"   value="@Model.SortBy" />
+                        <input type="hidden" name="SortDir"  value="@Model.SortDir" />
+                        <input type="hidden" name="Page"     value="1" />
+                        <label class="mb-0">Per page:</label>
+                        <select name="PageSize" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                            @foreach (var size in new[] { 10, 25, 50, 100 })
+                            {
+                                if (Model.Filter.PageSize == size)
+                                {
+                                    <option value="@size" selected>@size</option>
+                                }
+                                else
+                                {
+                                    <option value="@size">@size</option>
+                                }
+                            }
+                        </select>
+                    </form>
+                </div>
+
+                <!-- Next -->
                 <div>
                     @if (Model.HasNextPage)
                     {
-                        <a href="?User=@Model.Filter.User&Relation=@Model.Filter.Relation&Object=@Model.Filter.Object&Page=@(Model.Filter.Page + 1)&PageSize=@Model.Filter.PageSize"
+                        <a href="?User=@Model.Filter.User&Relation=@Model.Filter.Relation&Object=@Model.Filter.Object&SortBy=@Model.SortBy&SortDir=@Model.SortDir&PageSize=@Model.Filter.PageSize&Page=@(Model.Filter.Page + 1)"
                            class="btn btn-sm btn-outline-secondary">
                             Next<i class="bi bi-chevron-right ms-1"></i>
                         </a>
+                    }
+                    else
+                    {
+                        <button class="btn btn-sm btn-outline-secondary" disabled>
+                            Next<i class="bi bi-chevron-right ms-1"></i>
+                        </button>
                     }
                 </div>
             </div>
