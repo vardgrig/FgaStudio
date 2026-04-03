@@ -1,0 +1,206 @@
+@page
+@model FgaStudio.Web.Pages.AuthModels.DetailsModel
+@{
+    ViewData["Title"] = "Authorization Model";
+    ViewData["ActivePage"] = "Stores";
+    ViewData["ActiveConnection"] = Model.ActiveConnectionName;
+    ViewData["ActiveStore"] = Model.ActiveStoreId;
+
+    var modelId = Model.ModelId ?? "";
+    var shortId = modelId.Length > 16 ? modelId[..16] + "…" : modelId;
+}
+
+<!-- Header -->
+<div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-4">
+    <div class="d-flex align-items-center gap-3 min-w-0">
+        <a href="/Stores" class="btn btn-sm btn-outline-secondary flex-shrink-0">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div class="min-w-0">
+            <h1 class="page-title mb-1 d-flex align-items-center gap-2 flex-wrap">
+                Authorization Model
+                @if (Model.Detail?.IsActive == true)
+                {
+                    <span class="badge bg-success" style="font-size:0.65rem">Active</span>
+                }
+            </h1>
+            <div class="font-mono text-secondary small text-truncate" title="@modelId">@modelId</div>
+        </div>
+    </div>
+    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+        @if (Model.Detail?.CreatedAt.HasValue == true)
+        {
+            <span class="badge bg-body-secondary text-body border">
+                <i class="bi bi-calendar3 me-1"></i>@Model.Detail.CreatedAt!.Value.ToString("yyyy-MM-dd HH:mm")
+            </span>
+        }
+        @if (Model.Detail?.SchemaJson is not null)
+        {
+            <a href="?handler=download&storeId=@Model.StoreId&modelId=@Model.ModelId"
+               class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-download me-1"></i>Download
+            </a>
+        }
+    </div>
+</div>
+
+@if (string.IsNullOrEmpty(Model.StoreId) || string.IsNullOrEmpty(Model.ModelId))
+{
+    <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Missing storeId or modelId parameters.</div>
+}
+else if (Model.Error is not null)
+{
+    <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>@Model.Error</div>
+}
+else if (Model.Detail is null)
+{
+    <div class="empty-state card text-center p-5">
+        <i class="bi bi-diagram-3 display-4 text-secondary mb-3 d-block"></i>
+        <h5>Model not found</h5>
+        <p class="text-secondary mb-0">The authorization model could not be loaded.</p>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+
+        <!-- Schema JSON -->
+        <div class="col-lg-7">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <h6 class="fw-semibold mb-0">
+                    <i class="bi bi-braces me-1 text-secondary"></i>Schema JSON
+                </h6>
+                @if (Model.Detail.SchemaJson is not null)
+                {
+                    <button class="btn btn-sm btn-outline-secondary"
+                            onclick="copySchema()" id="copy-btn" title="Copy to clipboard">
+                        <i class="bi bi-clipboard me-1"></i>Copy
+                    </button>
+                }
+            </div>
+
+            @if (Model.Detail.SchemaJson is null)
+            {
+                <div class="card p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <i class="bi bi-info-circle text-warning fs-4"></i>
+                        <div>
+                            <div class="fw-semibold">Schema not available</div>
+                            <div class="small text-secondary">
+                                Full schema retrieval requires an HTTP API connection.
+                                Direct database connections cannot decode the protobuf-encoded schema.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <pre class="schema-viewer" id="schema-content">@Model.Detail.SchemaJson</pre>
+            }
+        </div>
+
+        <!-- Type Definitions Tree -->
+        <div class="col-lg-5">
+            <h6 class="fw-semibold mb-2">
+                <i class="bi bi-diagram-3 me-1 text-secondary"></i>Type Definitions
+                @if (Model.Detail.TypeDefinitions.Count > 0)
+                {
+                    <span class="text-secondary fw-normal small ms-1">@Model.Detail.TypeDefinitions.Count type(s)</span>
+                }
+            </h6>
+
+            @if (!Model.Detail.TypeDefinitions.Any())
+            {
+                <div class="card p-4 text-center text-secondary">
+                    <i class="bi bi-diagram-3 mb-2 d-block"></i>
+                    @if (Model.IsDbMode)
+                    {
+                        <span>Type tree requires an HTTP API connection.</span>
+                    }
+                    else
+                    {
+                        <span>No type definitions found.</span>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="d-flex flex-column gap-2" id="type-tree">
+                    @foreach (var node in Model.Detail.TypeDefinitions)
+                    {
+                        var collapseId = $"type-{node.Type}";
+                        <div class="type-tree-item card">
+                            <button class="type-tree-item__header"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#@collapseId"
+                                    aria-expanded="@(node.Relations.Count > 0 ? "true" : "false")"
+                                    @(node.Relations.Count == 0 ? "disabled" : "")>
+                                <span class="type-tree-item__icon">
+                                    <i class="bi bi-box"></i>
+                                </span>
+                                <span class="fw-semibold font-mono flex-grow-1 text-start">@node.Type</span>
+                                @if (node.Relations.Count > 0)
+                                {
+                                    <span class="badge bg-body-secondary text-body border ms-auto">
+                                        @node.Relations.Count relation@(node.Relations.Count != 1 ? "s" : "")
+                                    </span>
+                                    <i class="bi bi-chevron-down type-tree-chevron ms-1"></i>
+                                }
+                                else
+                                {
+                                    <span class="text-secondary small ms-auto">no relations</span>
+                                }
+                            </button>
+                            @if (node.Relations.Count > 0)
+                            {
+                                <div class="collapse show" id="@collapseId">
+                                    <ul class="type-tree-relations">
+                                        @foreach (var rel in node.Relations)
+                                        {
+                                            <li class="type-tree-relation">
+                                                <i class="bi bi-arrow-return-right text-secondary"></i>
+                                                <span class="relation-badge">@rel</span>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+    </div>
+}
+
+<script>
+function copySchema() {
+    var content = document.getElementById('schema-content');
+    if (!content) return;
+    navigator.clipboard.writeText(content.textContent).then(function () {
+        var btn = document.getElementById('copy-btn');
+        var original = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check me-1"></i>Copied';
+        btn.classList.replace('btn-outline-secondary', 'btn-outline-success');
+        setTimeout(function () {
+            btn.innerHTML = original;
+            btn.classList.replace('btn-outline-success', 'btn-outline-secondary');
+        }, 2000);
+    });
+}
+
+// Rotate chevron on collapse toggle
+document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function (btn) {
+    var target = document.querySelector(btn.dataset.bsTarget);
+    if (!target) return;
+    target.addEventListener('hide.bs.collapse', function () {
+        btn.querySelector('.type-tree-chevron')?.classList.add('rotated');
+    });
+    target.addEventListener('show.bs.collapse', function () {
+        btn.querySelector('.type-tree-chevron')?.classList.remove('rotated');
+    });
+});
+</script>

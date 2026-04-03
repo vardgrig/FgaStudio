@@ -408,6 +408,88 @@ body {
     color: #fca5a5;
 }
 
+/* ─── Auth Model Detail ──────────────────────────────────── */
+.schema-viewer {
+    background: var(--form-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 1rem;
+    max-height: 520px;
+    overflow: auto;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.65;
+    color: var(--text-primary);
+    white-space: pre;
+    margin: 0;
+}
+
+.type-tree-item__header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.85rem;
+    background: var(--card-bg);
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.type-tree-item__header:hover:not(:disabled) {
+    background: var(--sidebar-link-hover);
+}
+
+.type-tree-item__header:disabled {
+    cursor: default;
+    opacity: 1;
+}
+
+.type-tree-item__icon {
+    width: 24px;
+    height: 24px;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+.type-tree-chevron {
+    transition: transform 0.2s;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+
+.type-tree-chevron.rotated {
+    transform: rotate(-90deg);
+}
+
+.type-tree-relations {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-top: 1px solid var(--card-border);
+}
+
+.type-tree-relation {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.85rem 0.35rem 1rem;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--card-border);
+    color: var(--text-secondary);
+}
+
+.type-tree-relation:last-child {
+    border-bottom: none;
+}
+
 /* ─── Scrollbar ──────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

@@ -60,6 +60,21 @@ public class AuthorizationModelViewModel
     public bool IsActive { get; set; }
 }
 
+public class AuthorizationModelDetailViewModel
+{
+    public string Id { get; set; } = string.Empty;
+    public DateTime? CreatedAt { get; set; }
+    public bool IsActive { get; set; }
+    public string? SchemaJson { get; set; }
+    public List<TypeDefinitionNode> TypeDefinitions { get; set; } = [];
+}
+
+public class TypeDefinitionNode
+{
+    public string Type { get; set; } = string.Empty;
+    public List<string> Relations { get; set; } = [];
+}
+
 public class TupleFilter
 {
     public string? User { get; set; }

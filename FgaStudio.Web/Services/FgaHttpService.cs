@@ -98,6 +98,38 @@ public class FgaHttpService : IFgaService
         }).ToList() ?? [];
     }
 
+    public async Task<AuthorizationModelDetailViewModel?> GetAuthorizationModelAsync(string storeId, string modelId)
+    {
+        var client = BuildClient(storeId, modelId);
+        var response = await client.ReadAuthorizationModel();
+        var authModel = response.AuthorizationModel;
+        if (authModel is null) return null;
+
+        string? prettyJson = null;
+        try
+        {
+            var rawJson = authModel.ToJson();
+            using var doc = System.Text.Json.JsonDocument.Parse(rawJson);
+            prettyJson = System.Text.Json.JsonSerializer.Serialize(doc,
+                new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        }
+        catch { /* leave null */ }
+
+        var nodes = authModel.TypeDefinitions?.Select(td => new TypeDefinitionNode
+        {
+            Type = td.Type ?? "",
+            Relations = td.Relations?.Keys.OrderBy(k => k).ToList() ?? []
+        }).OrderBy(n => n.Type).ToList() ?? [];
+
+        return new AuthorizationModelDetailViewModel
+        {
+            Id = authModel.Id ?? modelId,
+            IsActive = authModel.Id == _config.AuthorizationModelId,
+            SchemaJson = prettyJson,
+            TypeDefinitions = nodes
+        };
+    }
+
     public async Task<(List<TupleViewModel> Tuples, string? ContinuationToken)> ReadTuplesAsync(
         string storeId, string modelId, TupleFilter filter, string? continuationToken = null)
     {

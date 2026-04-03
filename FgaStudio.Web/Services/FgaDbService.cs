@@ -118,6 +118,35 @@ public class FgaDbService : IFgaService
         return models;
     }
 
+    public async Task<AuthorizationModelDetailViewModel?> GetAuthorizationModelAsync(string storeId, string modelId)
+    {
+        await using var conn = new NpgsqlConnection(_config.ConnectionString);
+        await conn.OpenAsync();
+
+        const string sql = """
+            SELECT authorization_model_id, created_at
+            FROM authorization_model
+            WHERE store = @storeId AND authorization_model_id = @modelId
+            LIMIT 1
+            """;
+
+        await using var cmd = new NpgsqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("storeId", storeId);
+        cmd.Parameters.AddWithValue("modelId", modelId);
+        await using var reader = await cmd.ExecuteReaderAsync();
+
+        if (!await reader.ReadAsync()) return null;
+
+        return new AuthorizationModelDetailViewModel
+        {
+            Id = reader.GetString(0),
+            CreatedAt = reader.IsDBNull(1) ? null : reader.GetDateTime(1),
+            IsActive = reader.GetString(0) == _config.AuthorizationModelId,
+            SchemaJson = null,
+            TypeDefinitions = []
+        };
+    }
+
     public async Task<(List<TupleViewModel> Tuples, string? ContinuationToken)> ReadTuplesAsync(
         string storeId, string modelId, TupleFilter filter, string? continuationToken = null)
     {

@@ -11,5 +11,6 @@ public interface IFgaService
         string storeId, string modelId, TupleFilter filter, string? continuationToken = null);
     Task WriteTupleAsync(string storeId, string modelId, TupleKey tuple);
     Task DeleteTupleAsync(string storeId, string modelId, TupleKey tuple);
+    Task<AuthorizationModelDetailViewModel?> GetAuthorizationModelAsync(string storeId, string modelId);
     Task<(bool Success, string? Error)> TestConnectionAsync();
 }

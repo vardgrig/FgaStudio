@@ -122,12 +122,18 @@ else
                                         <div class="small text-secondary">@authModel.CreatedAt.Value.ToString("yyyy-MM-dd HH:mm")</div>
                                     }
                                 </div>
-                                <form method="post" asp-page-handler="SelectModel">
-                                    <input type="hidden" name="modelId" value="@authModel.Id" />
-                                    <button type="submit" class="btn btn-sm @(authModel.IsActive ? "btn-success" : "btn-outline-primary")">
-                                        @(authModel.IsActive ? "Selected" : "Select")
-                                    </button>
-                                </form>
+                                <div class="d-flex gap-1">
+                                    <a href="/AuthModels/Details?storeId=@Model.ActiveStoreId&modelId=@authModel.Id"
+                                       class="btn btn-sm btn-outline-secondary" title="View details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <form method="post" asp-page-handler="SelectModel">
+                                        <input type="hidden" name="modelId" value="@authModel.Id" />
+                                        <button type="submit" class="btn btn-sm @(authModel.IsActive ? "btn-success" : "btn-outline-primary")">
+                                            @(authModel.IsActive ? "Selected" : "Select")
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     }
