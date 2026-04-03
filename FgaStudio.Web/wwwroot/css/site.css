@@ -453,6 +453,92 @@ body {
     flex-shrink: 0;
 }
 
+/* ─── JSON Viewer ────────────────────────────────────────── */
+:root {
+    --jv-key:    #9cdcfe;
+    --jv-str:    #ce9178;
+    --jv-num:    #b5cea8;
+    --jv-bool:   #569cd6;
+    --jv-null:   #569cd6;
+    --jv-brace:  #ffd700;
+    --jv-punct:  #808080;
+    --jv-dim:    #6a9955;
+    --jv-btn:    #4a5568;
+    --jv-btn-hover: #718096;
+}
+
+[data-bs-theme="light"] {
+    --jv-key:    #0451a5;
+    --jv-str:    #a31515;
+    --jv-num:    #098658;
+    --jv-bool:   #0000ff;
+    --jv-null:   #0000ff;
+    --jv-brace:  #795e26;
+    --jv-punct:  #555;
+    --jv-dim:    #008000;
+    --jv-btn:    #999;
+    --jv-btn-hover: #555;
+}
+
+.jv-container {
+    background: var(--form-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 1rem 1rem 1rem 0.5rem;
+    max-height: 560px;
+    overflow: auto;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.7;
+}
+
+.jv-wrap {
+    /* root wrap */
+}
+
+.jv-row {
+    padding-left: 1.4em;
+    display: block;
+    white-space: nowrap;
+}
+
+.jv-block {
+    display: block;
+}
+
+/* Colored tokens */
+.jv-key   { color: var(--jv-key); }
+.jv-str   { color: var(--jv-str); }
+.jv-num   { color: var(--jv-num); }
+.jv-bool  { color: var(--jv-bool); }
+.jv-null  { color: var(--jv-null); font-style: italic; }
+.jv-brace { color: var(--jv-brace); font-weight: 600; }
+.jv-colon { color: var(--jv-punct); }
+.jv-punct { color: var(--jv-punct); }
+.jv-dim   { color: var(--jv-dim); font-style: italic; }
+
+/* Inline collapsed preview */
+.jv-peek  { display: inline; }
+
+/* Toggle button */
+.jv-btn {
+    background: none;
+    border: none;
+    padding: 0 3px;
+    margin: 0 1px;
+    cursor: pointer;
+    color: var(--jv-btn);
+    font-size: 0.7rem;
+    vertical-align: middle;
+    line-height: 1;
+    border-radius: 2px;
+    transition: color 0.12s;
+}
+
+.jv-btn:hover {
+    color: var(--jv-btn-hover);
+}
+
 /* ─── Auth Model Detail ──────────────────────────────────── */
 .schema-viewer {
     background: var(--form-bg);
