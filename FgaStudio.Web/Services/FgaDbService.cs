@@ -64,7 +64,7 @@ public class FgaDbService : IFgaService
         await conn.OpenAsync();
 
         const string sql = """
-            SELECT id, name, created_at
+            SELECT id, name, created_at, updated_at
             FROM store
             WHERE deleted_at IS NULL
             ORDER BY created_at DESC
@@ -81,6 +81,7 @@ public class FgaDbService : IFgaService
                 Id = reader.GetString(0),
                 Name = reader.GetString(1),
                 CreatedAt = reader.IsDBNull(2) ? null : reader.GetDateTime(2),
+                UpdatedAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
                 IsActive = reader.GetString(0) == _config.StoreId
             });
         }
@@ -93,10 +94,10 @@ public class FgaDbService : IFgaService
         await conn.OpenAsync();
 
         const string sql = """
-            SELECT authorization_model_id, created_at
+            SELECT authorization_model_id, created_at, schema_version
             FROM authorization_model
             WHERE store = @storeId
-            GROUP BY authorization_model_id, created_at
+            GROUP BY authorization_model_id, created_at, schema_version
             ORDER BY created_at DESC
             """;
 
@@ -112,6 +113,7 @@ public class FgaDbService : IFgaService
             {
                 Id = id,
                 CreatedAt = reader.IsDBNull(1) ? null : reader.GetDateTime(1),
+                SchemaVersion = reader.IsDBNull(2) ? null : reader.GetString(2),
                 IsActive = id == _config.AuthorizationModelId
             });
         }

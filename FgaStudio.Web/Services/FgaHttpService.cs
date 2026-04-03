@@ -83,6 +83,7 @@ public class FgaHttpService : IFgaService
             Id = s.Id,
             Name = s.Name,
             CreatedAt = s.CreatedAt,
+            UpdatedAt = s.UpdatedAt,
             IsActive = s.Id == _config.StoreId
         }).ToList() ?? [];
     }
@@ -94,6 +95,9 @@ public class FgaHttpService : IFgaService
         return response.AuthorizationModels?.Select(m => new AuthorizationModelViewModel
         {
             Id = m.Id,
+            SchemaVersion = m.SchemaVersion,
+            TypeDefinitionCount = m.TypeDefinitions?.Count ?? 0,
+            ConditionCount = m.Conditions?.Count ?? 0,
             IsActive = m.Id == _config.AuthorizationModelId
         }).ToList() ?? [];
     }

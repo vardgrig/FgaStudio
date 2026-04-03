@@ -9,7 +9,7 @@
 
 <div class="page-header mb-4">
     <h1 class="page-title">Dashboard</h1>
-    <p class="text-secondary">Overview of your OpenFGA connections and active store context.</p>
+    <p class="text-secondary">Overview of your active connection, store, and authorization model.</p>
 </div>
 
 @if (Model.ActiveConnection is null)
@@ -19,70 +19,273 @@
         <h5>No active connection</h5>
         <p class="text-secondary mb-4">Configure a connection to your OpenFGA server or database to get started.</p>
         <a href="/Connection/Configure" class="btn btn-primary">
-            <i class="bi bi-plus-lg me-1"></i> Add Connection
+            <i class="bi bi-plus-lg me-1"></i>Add Connection
         </a>
     </div>
 }
 else
 {
-    <div class="row g-4 mb-4">
-        <div class="col-md-4">
-            <div class="stat-card card h-100">
-                <div class="card-body">
-                    <div class="stat-card__label">Connection</div>
-                    <div class="stat-card__value text-truncate">@Model.ActiveConnection.Name</div>
-                    <div class="mt-2">
+    @if (Model.LoadError is not null)
+    {
+        <div class="alert alert-danger d-flex align-items-center gap-2 mb-4">
+            <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+            <span>Could not load details: @Model.LoadError</span>
+        </div>
+    }
+
+    <!-- ── Connection card ───────────────────────────────────────── -->
+    <div class="dash-section-label">Connection</div>
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-4">
+                <div class="col-sm-6 col-lg-3">
+                    <div class="dash-field__label">Name</div>
+                    <div class="dash-field__value fw-semibold">@Model.ActiveConnection.Name</div>
+                </div>
+                <div class="col-sm-6 col-lg-2">
+                    <div class="dash-field__label">Type</div>
+                    <div class="mt-1">
                         <span class="badge @(Model.ActiveConnection.Type == ConnectionType.Url ? "badge--url" : "badge--db")">
                             <i class="bi @(Model.ActiveConnection.Type == ConnectionType.Url ? "bi-globe" : "bi-server") me-1"></i>
                             @Model.ActiveConnection.Type
                         </span>
                     </div>
                 </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="stat-card card h-100">
-                <div class="card-body">
-                    <div class="stat-card__label">Store ID</div>
-                    @if (!string.IsNullOrEmpty(Model.ActiveConnection.StoreId))
-                    {
-                        <div class="stat-card__value font-mono text-truncate" title="@Model.ActiveConnection.StoreId">
-                            @Model.ActiveConnection.StoreId
+                @if (Model.ActiveConnection.Type == ConnectionType.Url && !string.IsNullOrEmpty(Model.ActiveConnection.ApiUrl))
+                {
+                    <div class="col-sm-6 col-lg-4">
+                        <div class="dash-field__label">API URL</div>
+                        <div class="dash-field__value font-mono">@Model.ActiveConnection.ApiUrl</div>
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="dash-field__label">Auth Method</div>
+                        <div class="dash-field__value">@Model.ActiveConnection.AuthMethod</div>
+                    </div>
+                }
+                else if (Model.ActiveConnection.Type == ConnectionType.Database && !string.IsNullOrEmpty(Model.ActiveConnection.ConnectionString))
+                {
+                    <div class="col-sm-12 col-lg-7">
+                        <div class="dash-field__label">Connection String</div>
+                        <div class="dash-field__value font-mono dash-field__value--masked">
+                            @MaskConnectionString(Model.ActiveConnection.ConnectionString)
                         </div>
-                    }
-                    else
-                    {
-                        <div class="text-secondary mt-1">Not selected</div>
-                        <a href="/Stores" class="btn btn-sm btn-outline-primary mt-2">Select Store</a>
-                    }
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="stat-card card h-100">
-                <div class="card-body">
-                    <div class="stat-card__label">Authorization Model ID</div>
-                    @if (!string.IsNullOrEmpty(Model.ActiveConnection.AuthorizationModelId))
-                    {
-                        <div class="stat-card__value font-mono text-truncate" title="@Model.ActiveConnection.AuthorizationModelId">
-                            @Model.ActiveConnection.AuthorizationModelId
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-secondary mt-1">Not selected</div>
-                        @if (!string.IsNullOrEmpty(Model.ActiveConnection.StoreId))
-                        {
-                            <a href="/Stores" class="btn btn-sm btn-outline-primary mt-2">Select Model</a>
-                        }
-                    }
-                </div>
+                    </div>
+                }
             </div>
         </div>
     </div>
 
-    <div class="row g-4">
-        <div class="col-md-6">
+    <!-- ── Store + Auth model ─────────────────────────────────────── -->
+    <div class="row g-4 mb-4">
+
+        <!-- Store -->
+        <div class="col-lg-6">
+            <div class="dash-section-label">Store</div>
+            @if (string.IsNullOrEmpty(Model.ActiveConnection.StoreId))
+            {
+                <div class="card p-4 text-center">
+                    <i class="bi bi-database text-secondary mb-2 d-block fs-3"></i>
+                    <div class="text-secondary small mb-2">No store selected</div>
+                    <a href="/Stores" class="btn btn-sm btn-outline-primary">Select Store</a>
+                </div>
+            }
+            else
+            {
+                <div class="card h-100">
+                    <div class="card-body d-flex flex-column gap-3">
+                        @if (Model.StoreDetail is not null)
+                        {
+                            <!-- Name -->
+                            <div class="d-flex align-items-start justify-content-between gap-2">
+                                <div>
+                                    <div class="dash-field__label">Name</div>
+                                    <div class="fw-semibold fs-6">@Model.StoreDetail.Name</div>
+                                </div>
+                                <span class="badge bg-success flex-shrink-0">Active</span>
+                            </div>
+
+                            <hr class="my-0 border-secondary opacity-25" />
+                        }
+
+                        <!-- ID -->
+                        <div>
+                            <div class="dash-field__label">Store ID</div>
+                            <div class="d-flex align-items-center gap-2 mt-1">
+                                <code class="dash-id font-mono flex-grow-1">@Model.ActiveConnection.StoreId</code>
+                                <button class="btn btn-sm btn-outline-secondary dash-copy-btn"
+                                        onclick="copyText('@Model.ActiveConnection.StoreId', this)"
+                                        title="Copy ID">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        @if (Model.StoreDetail is not null)
+                        {
+                            <div class="row g-3">
+                                @if (Model.StoreDetail.CreatedAt.HasValue)
+                                {
+                                    <div class="col-6">
+                                        <div class="dash-field__label">Created</div>
+                                        <div class="dash-field__value">
+                                            @Model.StoreDetail.CreatedAt.Value.ToString("yyyy-MM-dd")
+                                            <span class="text-secondary">@Model.StoreDetail.CreatedAt.Value.ToString("HH:mm") UTC</span>
+                                        </div>
+                                    </div>
+                                }
+                                @if (Model.StoreDetail.UpdatedAt.HasValue)
+                                {
+                                    <div class="col-6">
+                                        <div class="dash-field__label">Last Updated</div>
+                                        <div class="dash-field__value">
+                                            @Model.StoreDetail.UpdatedAt.Value.ToString("yyyy-MM-dd")
+                                            <span class="text-secondary">@Model.StoreDetail.UpdatedAt.Value.ToString("HH:mm") UTC</span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        <div class="mt-auto pt-1">
+                            <a href="/Stores" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-database me-1"></i>Manage Stores
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Authorization Model -->
+        <div class="col-lg-6">
+            <div class="dash-section-label">Authorization Model</div>
+            @if (string.IsNullOrEmpty(Model.ActiveConnection.AuthorizationModelId))
+            {
+                <div class="card p-4 text-center">
+                    <i class="bi bi-diagram-3 text-secondary mb-2 d-block fs-3"></i>
+                    <div class="text-secondary small mb-2">No authorization model selected</div>
+                    @if (!string.IsNullOrEmpty(Model.ActiveConnection.StoreId))
+                    {
+                        <a href="/Stores" class="btn btn-sm btn-outline-primary">Select Model</a>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="card h-100">
+                    <div class="card-body d-flex flex-column gap-3">
+
+                        <div class="d-flex align-items-start justify-content-between gap-2">
+                            <div class="dash-field__label mb-0">Authorization Model ID</div>
+                            <span class="badge bg-success flex-shrink-0">Active</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <code class="dash-id font-mono flex-grow-1">@Model.ActiveConnection.AuthorizationModelId</code>
+                            <button class="btn btn-sm btn-outline-secondary dash-copy-btn"
+                                    onclick="copyText('@Model.ActiveConnection.AuthorizationModelId', this)"
+                                    title="Copy ID">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+
+                        @if (Model.ModelDetail is not null)
+                        {
+                            <hr class="my-0 border-secondary opacity-25" />
+
+                            <div class="row g-3">
+                                @if (!string.IsNullOrEmpty(Model.ModelDetail.SchemaVersion))
+                                {
+                                    <div class="col-6">
+                                        <div class="dash-field__label">Schema Version</div>
+                                        <div class="dash-field__value font-mono">@Model.ModelDetail.SchemaVersion</div>
+                                    </div>
+                                }
+                                @if (Model.ModelDetail.TypeDefinitionCount > 0)
+                                {
+                                    <div class="col-6">
+                                        <div class="dash-field__label">Type Definitions</div>
+                                        <div class="dash-field__value">
+                                            <span class="fw-semibold">@Model.ModelDetail.TypeDefinitionCount</span>
+                                            <span class="text-secondary"> type@(Model.ModelDetail.TypeDefinitionCount != 1 ? "s" : "")</span>
+                                        </div>
+                                    </div>
+                                }
+                                @if (Model.ModelDetail.ConditionCount > 0)
+                                {
+                                    <div class="col-6">
+                                        <div class="dash-field__label">Conditions</div>
+                                        <div class="dash-field__value">
+                                            <span class="fw-semibold">@Model.ModelDetail.ConditionCount</span>
+                                            <span class="text-secondary"> condition@(Model.ModelDetail.ConditionCount != 1 ? "s" : "")</span>
+                                        </div>
+                                    </div>
+                                }
+                                @if (Model.ModelDetail.CreatedAt.HasValue)
+                                {
+                                    <div class="col-6">
+                                        <div class="dash-field__label">Created</div>
+                                        <div class="dash-field__value">
+                                            @Model.ModelDetail.CreatedAt.Value.ToString("yyyy-MM-dd")
+                                            <span class="text-secondary">@Model.ModelDetail.CreatedAt.Value.ToString("HH:mm") UTC</span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        <div class="mt-auto pt-1 d-flex gap-2">
+                            <a href="/Stores" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-diagram-3 me-1"></i>Change Model
+                            </a>
+                            @if (!string.IsNullOrEmpty(Model.ActiveConnection.StoreId) &&
+                                 !string.IsNullOrEmpty(Model.ActiveConnection.AuthorizationModelId))
+                            {
+                                <a href="/AuthModels/Details?storeId=@Model.ActiveConnection.StoreId&modelId=@Model.ActiveConnection.AuthorizationModelId"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye me-1"></i>View Schema
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- ── Stats row ──────────────────────────────────────────────── -->
+    @if (!string.IsNullOrEmpty(Model.ActiveConnection.StoreId))
+    {
+        <div class="dash-section-label">Data</div>
+        <div class="row g-4 mb-4">
+            <div class="col-sm-6 col-lg-3">
+                <div class="stat-card card">
+                    <div class="card-body">
+                        <div class="stat-card__label">Tuples</div>
+                        @if (Model.TupleCount >= 0)
+                        {
+                            <div class="stat-card__value">@Model.TupleCount.ToString("N0")</div>
+                            @if (Model.CachedAt.HasValue)
+                            {
+                                <div class="small text-secondary mt-1">
+                                    <i class="bi bi-clock me-1"></i>cached @Model.CachedAt.Value.ToString("HH:mm") UTC
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="stat-card__value text-secondary">—</div>
+                            <div class="small text-secondary mt-1">Load cache to count</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- ── Quick actions ──────────────────────────────────────────── -->
+    <div class="dash-section-label">Quick Actions</div>
+    <div class="row g-3">
+        <div class="col-md-6 col-lg-4">
             <div class="card quick-action-card">
                 <div class="card-body d-flex align-items-center gap-3">
                     <div class="quick-action-icon"><i class="bi bi-table"></i></div>
@@ -94,7 +297,19 @@ else
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-6 col-lg-4">
+            <div class="card quick-action-card">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="quick-action-icon"><i class="bi bi-diagram-2"></i></div>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold">Tuple Tree</div>
+                        <div class="small text-secondary">Visualize relationships by object or user</div>
+                    </div>
+                    <a href="/TupleTree" class="btn btn-sm btn-primary">Open</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
             <div class="card quick-action-card">
                 <div class="card-body d-flex align-items-center gap-3">
                     <div class="quick-action-icon"><i class="bi bi-database"></i></div>
@@ -108,3 +323,26 @@ else
         </div>
     </div>
 }
+
+@functions {
+    static string MaskConnectionString(string cs)
+    {
+        // Replace password= value with ***
+        return System.Text.RegularExpressions.Regex.Replace(
+            cs, @"(?i)(password|pwd|secret)=([^;]*)", "$1=***");
+    }
+}
+
+<script>
+function copyText(text, btn) {
+    navigator.clipboard.writeText(text).then(function () {
+        var icon = btn.querySelector('i');
+        icon.className = 'bi bi-check';
+        btn.classList.replace('btn-outline-secondary', 'btn-outline-success');
+        setTimeout(function () {
+            icon.className = 'bi bi-clipboard';
+            btn.classList.replace('btn-outline-success', 'btn-outline-secondary');
+        }, 2000);
+    });
+}
+</script>

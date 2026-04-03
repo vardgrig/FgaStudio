@@ -1,0 +1,331 @@
+@page
+@model FgaStudio.Web.Pages.TupleTree.IndexModel
+@{
+    ViewData["Title"] = "Tuple Tree";
+    ViewData["ActivePage"] = "TupleTree";
+    ViewData["ActiveConnection"] = Model.ActiveConnectionName;
+    ViewData["ActiveStore"] = Model.ActiveStoreId;
+
+    // Labels change based on perspective
+    string nodeLabel    = Model.IsUserPerspective ? "user" : "object";
+    string memberLabel  = Model.IsUserPerspective ? "Objects" : "Users";
+}
+
+<div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-4">
+    <div>
+        <h1 class="page-title mb-1">Tuple Tree</h1>
+        <p class="text-secondary mb-0">Visualize relationships grouped by @nodeLabel.</p>
+    </div>
+    @if (!string.IsNullOrEmpty(Model.ActiveConnectionName))
+    {
+        <span class="badge bg-body-secondary text-body border">
+            <i class="bi bi-plug me-1"></i>@Model.ActiveConnectionName
+        </span>
+    }
+</div>
+
+@if (!Model.IsReady)
+{
+    <div class="empty-state card text-center p-5">
+        @if (Model.ActiveConnection is null)
+        {
+            <i class="bi bi-plug display-4 text-secondary mb-3 d-block"></i>
+            <h5>No active connection</h5>
+            <p class="text-secondary">Set an active connection to view the tuple tree.</p>
+            <a href="/Connection" class="btn btn-primary">Go to Connections</a>
+        }
+        else
+        {
+            <i class="bi bi-database display-4 text-secondary mb-3 d-block"></i>
+            <h5>No store selected</h5>
+            <p class="text-secondary">Select a store before viewing tuples.</p>
+            <a href="/Stores" class="btn btn-primary">Go to Stores</a>
+        }
+    </div>
+}
+else if (Model.CacheIsEmpty)
+{
+    <div class="card text-center p-5">
+        <i class="bi bi-cloud-download display-4 text-secondary mb-3 d-block"></i>
+        <h5>Tuples not loaded yet</h5>
+        <p class="text-secondary mb-4">Load the tuple cache first to use the tree view.</p>
+        <form method="post" class="d-inline">
+            <button asp-page-handler="RefreshCache" class="btn btn-primary">
+                <i class="bi bi-cloud-download me-1"></i>Load Tuples
+            </button>
+        </form>
+    </div>
+}
+else if (Model.Error is not null)
+{
+    <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>@Model.Error</div>
+}
+else
+{
+    @if (Model.IsTruncated)
+    {
+        <div class="alert alert-warning d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+            <span>
+                Showing the first <strong>500</strong> of <strong>@Model.TotalCount</strong> matching tuples.
+                Use the entity filter to narrow results.
+            </span>
+        </div>
+    }
+
+    <div class="row g-4">
+
+        <!-- ── Left: Entity browser ─────────────────────────────── -->
+        <div class="col-lg-3">
+
+            <!-- Filter input -->
+            <div class="mb-3">
+                <form method="get" id="obj-filter-form">
+                    <div class="input-group input-group-sm mb-2">
+                        <span class="input-group-text bg-transparent border-end-0">
+                            <i class="bi bi-box text-secondary" style="font-size:0.75rem"></i>
+                        </span>
+                        <input name="object"
+                               value="@Model.ObjectFilter"
+                               id="input-object"
+                               class="form-control form-control-sm font-mono border-start-0 ps-0"
+                               placeholder="object (e.g. file:abc)"
+                               autocomplete="off" />
+                    </div>
+                    <div class="input-group input-group-sm mb-2">
+                        <span class="input-group-text bg-transparent border-end-0">
+                            <i class="bi bi-person text-secondary" style="font-size:0.75rem"></i>
+                        </span>
+                        <input name="user"
+                               value="@Model.UserFilter"
+                               id="input-user"
+                               class="form-control form-control-sm font-mono border-start-0 ps-0"
+                               placeholder="user (e.g. user:alice)"
+                               autocomplete="off" />
+                    </div>
+                    <div class="d-flex gap-1">
+                        <button type="submit" class="btn btn-sm btn-primary flex-grow-1">
+                            <i class="bi bi-funnel me-1"></i>Filter
+                        </button>
+                        @if (!string.IsNullOrEmpty(Model.ObjectFilter) || !string.IsNullOrEmpty(Model.UserFilter))
+                        {
+                            <a href="/TupleTree" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-x-lg"></i>
+                            </a>
+                        }
+                    </div>
+                </form>
+            </div>
+
+            <!-- Cache refresh (HTTP only) -->
+            @if (Model.IsUrlConnection && Model.CachedAt.HasValue)
+            {
+                <div class="d-flex align-items-center justify-content-between mb-2 small text-secondary">
+                    <span><i class="bi bi-clock me-1"></i>@Model.CachedAt.Value.ToString("HH:mm")</span>
+                    <form method="post" class="d-inline">
+                        <button asp-page-handler="RefreshCache"
+                                class="btn btn-link btn-sm p-0 text-secondary text-decoration-none">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    </form>
+                </div>
+            }
+
+            <!-- Entity groups -->
+            @if (!Model.EntityGroups.Any())
+            {
+                <div class="card p-3 text-center text-secondary small">No entities found.</div>
+            }
+            else
+            {
+                <div class="d-flex flex-column gap-2" style="max-height: calc(100vh - 300px); overflow-y: auto;">
+                    @foreach (var (typePrefix, items) in Model.EntityGroups)
+                    {
+                        <div class="object-group card">
+                            <div class="object-group__header">
+                                <i class="bi bi-tag text-secondary" style="font-size:0.7rem"></i>
+                                <span class="text-secondary small fw-semibold text-uppercase"
+                                      style="letter-spacing:0.06em; font-size:0.68rem">@typePrefix</span>
+                                <span class="badge bg-body-secondary text-secondary ms-auto"
+                                      style="font-size:0.65rem">@items.Count</span>
+                            </div>
+                            <ul class="object-group__list">
+                                @foreach (var item in items)
+                                {
+                                    // Link uses ?object= or ?user= based on where this entity appears
+                                    var href = item.IsObjectFilter
+                                        ? $"/TupleTree?object={Uri.EscapeDataString(item.Value)}"
+                                        : $"/TupleTree?user={Uri.EscapeDataString(item.Value)}";
+
+                                    var isActive = item.IsObjectFilter
+                                        ? item.Value == Model.ObjectFilter
+                                        : item.Value == Model.UserFilter;
+
+                                    <li>
+                                        <a href="@href"
+                                           class="object-group__item @(isActive ? "object-group__item--active" : "")"
+                                           title="@item.Value">
+                                            @if (!item.IsObjectFilter)
+                                            {
+                                                <i class="bi bi-person me-1 text-secondary opacity-50"
+                                                   style="font-size:0.7rem"></i>
+                                            }
+                                            <span class="font-mono">@item.Value</span>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- ── Right: Tree ──────────────────────────────────────── -->
+        <div class="col-lg-9">
+            @if (!Model.Tree.Any())
+            {
+                <div class="empty-state card text-center p-5">
+                    <i class="bi bi-diagram-3 display-4 text-secondary mb-3 d-block"></i>
+                    <h6>No tuples found</h6>
+                    <p class="text-secondary small mb-0">
+                        @if (!string.IsNullOrEmpty(Model.ActiveFilter))
+                        {
+                            <span>No tuples for <code>@Model.ActiveFilter</code>.</span>
+                        }
+                        else
+                        {
+                            <span>This store has no tuples yet.</span>
+                        }
+                    </p>
+                </div>
+            }
+            else
+            {
+                <!-- Summary / toolbar -->
+                <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+                    <span class="small text-secondary">
+                        <i class="bi @(Model.IsUserPerspective ? "bi-person" : "bi-box") me-1"></i>
+                        <strong>@Model.Tree.Count</strong> @nodeLabel@(Model.Tree.Count != 1 ? "s" : "")
+                    </span>
+                    <span class="small text-secondary">
+                        <i class="bi bi-diagram-2 me-1"></i>
+                        <strong>@Model.Tree.Sum(n => n.TupleCount)</strong> tuple@(Model.Tree.Sum(n => n.TupleCount) != 1 ? "s" : "")
+                    </span>
+
+                    @if (!string.IsNullOrEmpty(Model.ObjectFilter))
+                    {
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                            <i class="bi bi-box me-1"></i>@Model.ObjectFilter
+                            <a href="/TupleTree" class="ms-1 text-primary text-decoration-none">&times;</a>
+                        </span>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.UserFilter))
+                    {
+                        <span class="badge bg-purple-subtle border" style="background:rgba(139,92,246,.12);border-color:rgba(139,92,246,.3)!important;color:#a78bfa">
+                            <i class="bi bi-person me-1"></i>@Model.UserFilter
+                            <a href="/TupleTree" class="ms-1 text-decoration-none" style="color:#a78bfa">&times;</a>
+                        </span>
+                    }
+
+                    <div class="ms-auto d-flex gap-1">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="toggleAll(true)">
+                            <i class="bi bi-arrows-expand me-1"></i>Expand
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="toggleAll(false)">
+                            <i class="bi bi-arrows-collapse me-1"></i>Collapse
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Perspective indicator -->
+                @if (Model.IsUserPerspective)
+                {
+                    <div class="d-flex align-items-center gap-2 mb-3 small text-secondary">
+                        <i class="bi bi-person-fill" style="color:#a78bfa"></i>
+                        <span>User perspective — showing what <strong>@Model.UserFilter</strong> has access to</span>
+                    </div>
+                }
+
+                <!-- Tree cards -->
+                <div class="d-flex flex-column gap-3" id="tuple-tree">
+                    @foreach (var node in Model.Tree)
+                    {
+                        var nodeId = $"node-{System.Text.RegularExpressions.Regex.Replace(node.Object, "[^a-zA-Z0-9]", "-")}";
+                        <div class="tt-object card">
+                            <button class="tt-object__header"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#@nodeId"
+                                    aria-expanded="true">
+                                <span class="tt-object__icon @(Model.IsUserPerspective ? "tt-object__icon--user" : "")">
+                                    <i class="bi @(Model.IsUserPerspective ? "bi-person" : "bi-box")"></i>
+                                </span>
+                                <div class="flex-grow-1 min-w-0 text-start">
+                                    <div class="font-mono fw-semibold text-truncate">@node.Object</div>
+                                    <div class="small text-secondary">
+                                        @node.Relations.Count relation@(node.Relations.Count != 1 ? "s" : "")
+                                        &middot;
+                                        @node.TupleCount @memberLabel.ToLower()
+                                    </div>
+                                </div>
+                                <span class="badge bg-body-secondary text-body border me-2"
+                                      style="font-size:0.7rem">@node.ObjectType</span>
+                                <i class="bi bi-chevron-down tt-chevron"></i>
+                            </button>
+
+                            <div class="collapse show" id="@nodeId">
+                                <div class="tt-relations">
+                                    @foreach (var rel in node.Relations)
+                                    {
+                                        <div class="tt-relation">
+                                            <div class="tt-relation__label">
+                                                <i class="bi bi-arrow-return-right text-secondary me-1"
+                                                   style="font-size:0.8rem"></i>
+                                                <span class="relation-badge">@rel.Relation</span>
+                                                <span class="text-secondary small ms-2">
+                                                    @rel.Users.Count @memberLabel.ToLower()
+                                                </span>
+                                            </div>
+                                            <div class="tt-users">
+                                                @foreach (var member in rel.Users)
+                                                {
+                                                    // Each member chip links to the opposite perspective
+                                                    var memberHref = Model.IsUserPerspective
+                                                        ? $"/TupleTree?object={Uri.EscapeDataString(member)}"
+                                                        : $"/TupleTree?user={Uri.EscapeDataString(member)}";
+                                                    <a href="@memberHref" class="tt-user font-mono" title="View @member">
+                                                        @member
+                                                    </a>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<script>
+document.querySelectorAll('.tt-object__header[data-bs-toggle="collapse"]').forEach(function (btn) {
+    var target = document.querySelector(btn.dataset.bsTarget);
+    if (!target) return;
+    target.addEventListener('hide.bs.collapse', function () {
+        btn.querySelector('.tt-chevron')?.classList.add('rotated');
+    });
+    target.addEventListener('show.bs.collapse', function () {
+        btn.querySelector('.tt-chevron')?.classList.remove('rotated');
+    });
+});
+
+function toggleAll(expand) {
+    document.querySelectorAll('#tuple-tree .collapse').forEach(function (el) {
+        bootstrap.Collapse.getOrCreateInstance(el, { toggle: false })[expand ? 'show' : 'hide']();
+    });
+}
+</script>

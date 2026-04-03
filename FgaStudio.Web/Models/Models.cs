@@ -50,6 +50,7 @@ public class StoreViewModel
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public DateTime? CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
     public bool IsActive { get; set; }
 }
 
@@ -57,6 +58,9 @@ public class AuthorizationModelViewModel
 {
     public string Id { get; set; } = string.Empty;
     public DateTime? CreatedAt { get; set; }
+    public string? SchemaVersion { get; set; }
+    public int TypeDefinitionCount { get; set; }
+    public int ConditionCount { get; set; }
     public bool IsActive { get; set; }
 }
 
@@ -73,6 +77,20 @@ public class TypeDefinitionNode
 {
     public string Type { get; set; } = string.Empty;
     public List<string> Relations { get; set; } = [];
+}
+
+public class TupleObjectNode
+{
+    public string Object { get; set; } = string.Empty;
+    public string ObjectType => Object.Contains(':') ? Object[..Object.IndexOf(':')] : Object;
+    public List<TupleRelationGroup> Relations { get; set; } = [];
+    public int TupleCount => Relations.Sum(r => r.Users.Count);
+}
+
+public class TupleRelationGroup
+{
+    public string Relation { get; set; } = string.Empty;
+    public List<string> Users { get; set; } = [];
 }
 
 public class TupleFilter
