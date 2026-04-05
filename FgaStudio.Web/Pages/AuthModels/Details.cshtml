@@ -83,6 +83,10 @@ else
                             onclick="copySchema()" title="Copy JSON">
                         <i class="bi bi-clipboard me-1"></i>Copy
                     </button>
+                    <button class="btn btn-sm btn-outline-primary"
+                            onclick="downloadSchema()" title="Download as JSON file">
+                        <i class="bi bi-download me-1"></i>Download
+                    </button>
                 }
             </div>
 
@@ -315,6 +319,23 @@ function copySchema() {
             btn.classList.replace('btn-outline-success', 'btn-outline-secondary');
         }, 2000);
     });
+}
+
+function downloadSchema() {
+    var raw = document.getElementById('schema-raw');
+    if (!raw) return;
+    var content = raw.textContent.trim();
+    var modelId = '@Html.Raw(System.Text.RegularExpressions.Regex.Replace(modelId, "[^a-zA-Z0-9]", ""))';
+    var filename = 'auth-model' + (modelId ? '-' + modelId.slice(0, 12) : '') + '.json';
+    var blob = new Blob([content], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 // ─── Boot ────────────────────────────────────────────────────────────────────
