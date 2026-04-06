@@ -110,10 +110,18 @@ else
                                     <i class="bi bi-diagram-3@(authModel.IsActive ? "-fill" : "")"></i>
                                 </div>
                                 <div class="flex-grow-1 min-w-0">
-                                    <div class="fw-semibold d-flex align-items-center gap-2">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        @if (!string.IsNullOrEmpty(authModel.SchemaVersion))
+                                        {
+                                            <span class="fw-semibold font-mono small">v@authModel.SchemaVersion</span>
+                                        }
                                         @if (authModel.IsActive)
                                         {
                                             <span class="badge bg-success">Active</span>
+                                        }
+                                        @if (authModel.TypeDefinitionCount > 0)
+                                        {
+                                            <span class="badge bg-body-secondary text-body border">@authModel.TypeDefinitionCount type@(authModel.TypeDefinitionCount != 1 ? "s" : "")</span>
                                         }
                                     </div>
                                     <div class="small font-mono text-secondary text-truncate" title="@authModel.Id">@authModel.Id</div>

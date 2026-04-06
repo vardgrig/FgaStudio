@@ -7,9 +7,12 @@ public class ConnectionManager
 {
     public string DbPath { get; }
 
-    public ConnectionManager(IWebHostEnvironment env)
+    public ConnectionManager(IWebHostEnvironment env, IConfiguration config)
     {
-        DbPath = Path.Combine(env.ContentRootPath, "fgastudio.db");
+        var customPath = config["FgaStudio:DbPath"];
+        DbPath = !string.IsNullOrWhiteSpace(customPath)
+            ? customPath
+            : Path.Combine(env.ContentRootPath, "fgastudio.db");
         InitializeDb();
     }
 

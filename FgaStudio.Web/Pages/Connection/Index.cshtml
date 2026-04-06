@@ -52,7 +52,11 @@ else
                                 </span>
                             </div>
                             <div class="small text-secondary font-mono text-truncate">
-                                @(conn.Type == ConnectionType.Url ? conn.ApiUrl : conn.ConnectionString)
+                                @(conn.Type == ConnectionType.Url
+                                    ? conn.ApiUrl
+                                    : System.Text.RegularExpressions.Regex.Replace(
+                                        conn.ConnectionString ?? "",
+                                        @"(?i)(password|pwd|secret)=([^;]*)", "$1=***"))
                             </div>
                             @if (!string.IsNullOrEmpty(conn.StoreId))
                             {

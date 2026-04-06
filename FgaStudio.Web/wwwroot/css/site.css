@@ -326,6 +326,10 @@ body {
 }
 
 .tuple-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+[data-bs-theme="light"] .tuple-table tbody tr:hover {
     background: rgba(0, 0, 0, 0.03);
 }
 
