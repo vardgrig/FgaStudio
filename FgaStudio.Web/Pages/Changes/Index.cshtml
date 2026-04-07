@@ -1,0 +1,165 @@
+@page
+@model FgaStudio.Web.Pages.Changes.IndexModel
+@{
+    ViewData["Title"] = "Changes";
+    ViewData["ActivePage"] = "Changes";
+    ViewData["ActiveConnection"] = Model.ActiveConnectionName;
+    ViewData["ActiveStore"] = Model.ActiveStoreId;
+}
+
+<div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-4">
+    <div>
+        <h1 class="page-title mb-1">Tuple Changes</h1>
+        <p class="text-secondary mb-0">Audit log of all relationship tuple writes and deletes.</p>
+    </div>
+    @if (!string.IsNullOrEmpty(Model.ActiveConnectionName))
+    {
+        <span class="badge bg-body-secondary text-body border">
+            <i class="bi bi-plug me-1"></i>@Model.ActiveConnectionName
+        </span>
+    }
+</div>
+
+@if (!Model.IsReady)
+{
+    <div class="empty-state card text-center p-5">
+        @if (Model.ActiveConnection is null)
+        {
+            <i class="bi bi-plug display-4 text-secondary mb-3 d-block"></i>
+            <h5>No active connection</h5>
+            <p class="text-secondary">Set an active connection to view the changelog.</p>
+            <a href="/Connection" class="btn btn-primary">Go to Connections</a>
+        }
+        else
+        {
+            <i class="bi bi-database display-4 text-secondary mb-3 d-block"></i>
+            <h5>No store selected</h5>
+            <p class="text-secondary">Select a store before viewing changes.</p>
+            <a href="/Stores" class="btn btn-primary">Go to Stores</a>
+        }
+    </div>
+}
+else
+{
+    <!-- Filter bar -->
+    <div class="card mb-4">
+        <div class="card-body p-3">
+            <form method="get" class="d-flex align-items-end gap-3 flex-wrap">
+                <div>
+                    <label class="form-label small fw-semibold mb-1">Object Type</label>
+                    <input name="TypeFilter" value="@Model.TypeFilter"
+                           class="form-control form-control-sm font-mono"
+                           placeholder="e.g. document" style="width:200px" />
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="bi bi-funnel me-1"></i>Filter
+                    </button>
+                    @if (!string.IsNullOrEmpty(Model.TypeFilter))
+                    {
+                        <a href="/Changes" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (Model.Error is not null)
+    {
+        <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>@Model.Error</div>
+    }
+    else if (!Model.Changes.Any())
+    {
+        <div class="empty-state card text-center p-5">
+            <i class="bi bi-clock-history display-4 text-secondary mb-3 d-block"></i>
+            <h5>No changes found</h5>
+            <p class="text-secondary mb-0">
+                @if (!string.IsNullOrEmpty(Model.TypeFilter))
+                {
+                    <span>No changes for object type <code>@Model.TypeFilter</code>.</span>
+                }
+                else
+                {
+                    <span>This store has no recorded tuple changes yet.</span>
+                }
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover tuple-table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width:90px">Operation</th>
+                            <th>User</th>
+                            <th>Relation</th>
+                            <th>Object</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var change in Model.Changes)
+                        {
+                            <tr>
+                                <td>
+                                    @if (change.Operation == "write")
+                                    {
+                                        <span class="change-badge change-badge--write">
+                                            <i class="bi bi-plus-lg me-1"></i>write
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="change-badge change-badge--delete">
+                                            <i class="bi bi-dash-lg me-1"></i>delete
+                                        </span>
+                                    }
+                                </td>
+                                <td class="font-mono">@change.User</td>
+                                <td><span class="relation-badge">@change.Relation</span></td>
+                                <td class="font-mono">@change.Object</td>
+                                <td class="text-secondary small">
+                                    @(change.Timestamp?.ToString("yyyy-MM-dd HH:mm:ss") ?? "—")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div>
+                @if (!string.IsNullOrEmpty(Model.Token))
+                {
+                    <a href="/Changes?TypeFilter=@Model.TypeFilter" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-skip-backward me-1"></i>First page
+                    </a>
+                }
+            </div>
+            <div class="small text-secondary">
+                Showing <strong>@Model.Changes.Count</strong> change@(Model.Changes.Count != 1 ? "s" : "")
+            </div>
+            <div>
+                @if (!string.IsNullOrEmpty(Model.NextToken))
+                {
+                    <a href="/Changes?TypeFilter=@Model.TypeFilter&Token=@Uri.EscapeDataString(Model.NextToken)"
+                       class="btn btn-sm btn-outline-secondary">
+                        Next<i class="bi bi-chevron-right ms-1"></i>
+                    </a>
+                }
+                else
+                {
+                    <button class="btn btn-sm btn-outline-secondary" disabled>
+                        Next<i class="bi bi-chevron-right ms-1"></i>
+                    </button>
+                }
+            </div>
+        </div>
+    }
+}

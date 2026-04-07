@@ -22,6 +22,8 @@ A web-based management UI for [OpenFGA](https://openfga.dev/) — browse stores,
 
 ### Stores & Authorization Models
 - **Store browser** — list all stores with creation and update timestamps; set the active store in one click
+- **Create store** — create a new store directly from the UI (HTTP API mode)
+- **Delete store** — delete a store with a confirmation prompt (HTTP API mode)
 - **Authorization model list** — view all models for the active store with schema version and type counts
 - **Model detail view**
   - Interactive JSON schema viewer with expand/collapse per node
@@ -46,6 +48,22 @@ A web-based management UI for [OpenFGA](https://openfga.dev/) — browse stores,
 - Entities are grouped by type prefix in a sidebar browser
 - Expand all / Collapse all controls
 - Truncation warning when more than 500 tuples match
+
+### Relationship Queries
+Run any of the four OpenFGA relationship query operations against the active store (HTTP API mode only):
+
+- **Check** — ask "does user X have relation Y on object Z?" and get an ALLOWED / DENIED result
+- **Expand** — resolve who has a relation on an object and view the full userset tree as interactive JSON
+- **List Objects** — find all objects of a given type that a user has a specific relation on
+- **List Users** — find all users of a given type that have a specific relation on an object
+
+All four query results link back to the Tuple Tree for deeper exploration.
+
+### Tuple Changes
+- **Changelog** — paginated audit log of all tuple writes and deletes in the active store
+- Filter by object type to narrow the log
+- Color-coded write (green) / delete (red) operation badges
+- Available in both HTTP API and Direct Database mode
 
 ### UI
 - **Light and dark mode** — toggle in the sidebar; preference saved to `localStorage`
@@ -163,7 +181,7 @@ Connects to a running OpenFGA server using the official `OpenFga.Sdk`.
 | API Audience | Token audience URL, e.g. `https://api.us1.fga.dev/` |
 | Token Issuer | OAuth2 token issuer hostname, e.g. `auth.fga.dev` |
 
-Supports full read and write operations. Authorization model schemas and type definitions are fully available.
+Full feature support including relationship queries (Check, Expand, List Objects, List Users), store management, and the tuple changelog.
 
 ### Direct Database
 
@@ -173,7 +191,9 @@ Connects directly to the PostgreSQL database used by OpenFGA via Npgsql — usef
 |---|---|
 | Connection String | Npgsql connection string, e.g. `Host=localhost;Database=openfga;Username=postgres;Password=secret` |
 
-> **Note:** Full schema JSON and type definitions are not available in DB mode because OpenFGA stores the authorization model as a protobuf blob that cannot be decoded without the SDK. All tuple operations are fully supported.
+**Supported in DB mode:** tuple read/write/delete, store browser, tuple changelog (`changelog` table).
+
+**Not supported in DB mode:** Check, Expand, List Objects, List Users (these require the OpenFGA evaluation engine), store creation/deletion, and authorization model schema JSON (stored as a protobuf blob).
 
 ---
 
@@ -195,14 +215,18 @@ FgaStudio.Web/
 │   │   ├── Index                 # List and manage connections
 │   │   └── Configure             # Add / edit a connection
 │   ├── Stores/
-│   │   └── Index                 # Browse stores and authorization models
+│   │   └── Index                 # Browse stores, create/delete stores, select auth model
 │   ├── AuthModels/
 │   │   └── Details               # Authorization model schema and type definitions
 │   ├── Tuples/
 │   │   ├── Index                 # List, filter, sort, paginate, delete tuples
 │   │   └── Write                 # Write a new tuple
-│   └── TupleTree/
-│       └── Index                 # Visual relationship tree
+│   ├── TupleTree/
+│   │   └── Index                 # Visual relationship tree
+│   ├── Check/
+│   │   └── Index                 # Check, Expand, List Objects, List Users
+│   └── Changes/
+│       └── Index                 # Tuple changelog
 └── wwwroot/css/site.css          # Theme styles (light + dark mode)
 ```
 

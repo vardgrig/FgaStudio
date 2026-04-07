@@ -27,6 +27,59 @@ public class IndexModel : PageModel
         await LoadAsync();
     }
 
+    public async Task<IActionResult> OnPostCreateStoreAsync(string storeName)
+    {
+        if (string.IsNullOrWhiteSpace(storeName))
+        {
+            TempData["Error"] = "Store name cannot be empty.";
+            return RedirectToPage();
+        }
+
+        var active = _connectionManager.GetActive();
+        if (active is null) return RedirectToPage();
+
+        var service = _connectionManager.BuildService(active);
+        if (service is null) return RedirectToPage();
+
+        try
+        {
+            await service.CreateStoreAsync(storeName.Trim());
+            TempData["Success"] = $"Store \"{storeName.Trim()}\" created.";
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = $"Failed to create store: {ex.Message}";
+        }
+
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostDeleteStoreAsync(string storeId)
+    {
+        var active = _connectionManager.GetActive();
+        if (active is null) return RedirectToPage();
+
+        var service = _connectionManager.BuildService(active);
+        if (service is null) return RedirectToPage();
+
+        try
+        {
+            await service.DeleteStoreAsync(storeId);
+
+            // Clear store context if the deleted store was active
+            if (active.StoreId == storeId)
+                await _connectionManager.UpdateStoreContextAsync(active.Name, string.Empty, string.Empty);
+
+            TempData["Success"] = "Store deleted.";
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = $"Failed to delete store: {ex.Message}";
+        }
+
+        return RedirectToPage();
+    }
+
     public async Task<IActionResult> OnPostSelectStoreAsync(string storeId)
     {
         var active = _connectionManager.GetActive();

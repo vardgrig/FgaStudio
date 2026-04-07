@@ -201,4 +201,147 @@ public class FgaHttpService : IFgaService
             ]
         });
     }
+
+    // ── Changelog ─────────────────────────────────────────────────────────────
+
+    public async Task<(List<TupleChangeViewModel> Changes, string? ContinuationToken)> ReadChangesAsync(
+        string storeId, string? type, int pageSize, string? continuationToken)
+    {
+        var client = BuildClient(storeId);
+        var response = await client.ReadChanges(
+            new ClientReadChangesRequest { Type = type },
+            new ClientReadChangesOptions { PageSize = pageSize, ContinuationToken = continuationToken });
+
+        var changes = response.Changes?.Select(c => new TupleChangeViewModel
+        {
+            User      = c.TupleKey?.User ?? "",
+            Relation  = c.TupleKey?.Relation ?? "",
+            Object    = c.TupleKey?.Object ?? "",
+            Operation = c.Operation.ToString().ToLowerInvariant() switch
+            {
+                "write" or "tuple_operation_write" => "write",
+                _ => "delete"
+            },
+            Timestamp = c.Timestamp
+        }).ToList() ?? [];
+
+        return (changes, response.ContinuationToken);
+    }
+
+    // ── Relationship queries ──────────────────────────────────────────────────
+
+    public async Task<(bool? Allowed, string? Error)> CheckAsync(
+        string storeId, string modelId, AppTupleKey tuple)
+    {
+        try
+        {
+            var client = BuildClient(storeId, modelId);
+            var response = await client.Check(new ClientCheckRequest
+            {
+                User     = tuple.User,
+                Relation = tuple.Relation,
+                Object   = tuple.Object
+            });
+            return (response.Allowed, null);
+        }
+        catch (Exception ex) { return (null, ex.Message); }
+    }
+
+    public async Task<(string? TreeJson, string? Error)> ExpandAsync(
+        string storeId, string modelId, string relation, string obj)
+    {
+        try
+        {
+            var client = BuildClient(storeId, modelId);
+            var response = await client.Expand(new ClientExpandRequest
+            {
+                Relation = relation,
+                Object   = obj
+            });
+
+            string? json = null;
+            if (response.Tree is not null)
+            {
+                var raw = response.Tree.ToJson();
+                using var doc = System.Text.Json.JsonDocument.Parse(raw);
+                json = System.Text.Json.JsonSerializer.Serialize(doc,
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            }
+            return (json, null);
+        }
+        catch (Exception ex) { return (null, ex.Message); }
+    }
+
+    public async Task<(List<string> Objects, string? Error)> ListObjectsAsync(
+        string storeId, string modelId, string user, string relation, string type)
+    {
+        try
+        {
+            var client = BuildClient(storeId, modelId);
+            var response = await client.ListObjects(new ClientListObjectsRequest
+            {
+                User     = user,
+                Relation = relation,
+                Type     = type
+            });
+            return (response.Objects?.ToList() ?? [], null);
+        }
+        catch (Exception ex) { return ([], ex.Message); }
+    }
+
+    public async Task<(List<string> Users, string? Error)> ListUsersAsync(
+        string storeId, string modelId, string obj, string relation, string userType)
+    {
+        try
+        {
+            var client = BuildClient(storeId, modelId);
+            var parts = obj.Split(':', 2);
+            var response = await client.ListUsers(new ClientListUsersRequest
+            {
+                Object = new FgaObject
+                {
+                    Type = parts.Length == 2 ? parts[0] : obj,
+                    Id   = parts.Length == 2 ? parts[1] : ""
+                },
+                Relation    = relation,
+                UserFilters = [new UserTypeFilter { Type = userType }]
+            });
+
+            var users = new List<string>();
+            foreach (var u in response.Users ?? [])
+            {
+                if (u.Object is not null)
+                    users.Add($"{u.Object.Type}:{u.Object.Id}");
+                else if (u.Userset is not null)
+                    users.Add(string.IsNullOrEmpty(u.Userset.Relation)
+                        ? $"{u.Userset.Type}:*"
+                        : $"{u.Userset.Type}#{u.Userset.Relation}");
+                else if (u.Wildcard is not null)
+                    users.Add($"{u.Wildcard.Type}:*");
+            }
+            return (users, null);
+        }
+        catch (Exception ex) { return ([], ex.Message); }
+    }
+
+    // ── Store management ──────────────────────────────────────────────────────
+
+    public async Task<StoreViewModel> CreateStoreAsync(string name)
+    {
+        var client = BuildClient();
+        var response = await client.CreateStore(new ClientCreateStoreRequest { Name = name });
+        return new StoreViewModel
+        {
+            Id        = response.Id,
+            Name      = response.Name,
+            CreatedAt = response.CreatedAt,
+            UpdatedAt = response.UpdatedAt
+        };
+    }
+
+    public async Task DeleteStoreAsync(string storeId)
+    {
+        var client = BuildClient(storeId);
+        await client.DeleteStore();
+    }
 }

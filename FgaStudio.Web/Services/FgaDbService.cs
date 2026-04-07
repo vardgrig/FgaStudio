@@ -242,4 +242,78 @@ public class FgaDbService : IFgaService
         cmd.Parameters.AddWithValue("object", tuple.Object);
         await cmd.ExecuteNonQueryAsync();
     }
+
+    // ── Changelog ─────────────────────────────────────────────────────────────
+
+    public async Task<(List<TupleChangeViewModel> Changes, string? ContinuationToken)> ReadChangesAsync(
+        string storeId, string? type, int pageSize, string? continuationToken)
+    {
+        await using var conn = new NpgsqlConnection(_config.ConnectionString);
+        await conn.OpenAsync();
+
+        int offset = int.TryParse(continuationToken, out int p) ? p : 0;
+
+        var conditions = new List<string> { "store = @storeId" };
+        if (!string.IsNullOrWhiteSpace(type)) conditions.Add("object_type = @type");
+
+        var sql = $"""
+            SELECT _user, relation, object_type || ':' || object_id AS object,
+                   operation, inserted_at
+            FROM changelog
+            WHERE {string.Join(" AND ", conditions)}
+            ORDER BY inserted_at DESC
+            LIMIT @pageSize OFFSET @offset
+            """;
+
+        await using var cmd = new NpgsqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("storeId", storeId);
+        if (!string.IsNullOrWhiteSpace(type)) cmd.Parameters.AddWithValue("type", type);
+        cmd.Parameters.AddWithValue("pageSize", pageSize);
+        cmd.Parameters.AddWithValue("offset", offset);
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        var changes = new List<TupleChangeViewModel>();
+        while (await reader.ReadAsync())
+        {
+            changes.Add(new TupleChangeViewModel
+            {
+                User      = reader.GetString(0),
+                Relation  = reader.GetString(1),
+                Object    = reader.GetString(2),
+                Operation = reader.GetInt32(3) == 1 ? "write" : "delete",
+                Timestamp = reader.IsDBNull(4) ? null : reader.GetDateTime(4)
+            });
+        }
+
+        string? nextToken = changes.Count == pageSize ? (offset + pageSize).ToString() : null;
+        return (changes, nextToken);
+    }
+
+    // ── Relationship queries — not supported in DB mode ───────────────────────
+
+    private const string DbQueryNotSupported =
+        "Relationship queries (Check, Expand, ListObjects, ListUsers) require the OpenFGA " +
+        "evaluation engine and are not available in Direct Database mode. Switch to an HTTP API connection.";
+
+    public Task<(bool? Allowed, string? Error)> CheckAsync(string storeId, string modelId, TupleKey tuple)
+        => Task.FromResult<(bool?, string?)>((null, DbQueryNotSupported));
+
+    public Task<(string? TreeJson, string? Error)> ExpandAsync(string storeId, string modelId, string relation, string obj)
+        => Task.FromResult<(string?, string?)>((null, DbQueryNotSupported));
+
+    public Task<(List<string> Objects, string? Error)> ListObjectsAsync(string storeId, string modelId, string user, string relation, string type)
+        => Task.FromResult<(List<string>, string?)>(([], DbQueryNotSupported));
+
+    public Task<(List<string> Users, string? Error)> ListUsersAsync(string storeId, string modelId, string obj, string relation, string userType)
+        => Task.FromResult<(List<string>, string?)>(([], DbQueryNotSupported));
+
+    // ── Store management — not supported in DB mode ───────────────────────────
+
+    public Task<StoreViewModel> CreateStoreAsync(string name)
+        => Task.FromException<StoreViewModel>(
+            new NotSupportedException("Store creation is not supported in Direct Database mode."));
+
+    public Task DeleteStoreAsync(string storeId)
+        => Task.FromException(
+            new NotSupportedException("Store deletion is not supported in Direct Database mode."));
 }

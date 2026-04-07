@@ -93,6 +93,15 @@ public class TupleRelationGroup
     public List<string> Users { get; set; } = [];
 }
 
+public class TupleChangeViewModel
+{
+    public string User { get; set; } = string.Empty;
+    public string Relation { get; set; } = string.Empty;
+    public string Object { get; set; } = string.Empty;
+    public string Operation { get; set; } = string.Empty; // "write" | "delete"
+    public DateTime? Timestamp { get; set; }
+}
+
 public class TupleFilter
 {
     public string? User { get; set; }
